@@ -1,16 +1,86 @@
-# 这是一个示例 Python 脚本。
+from contextlib import asynccontextmanager
+from pathlib import Path
 
-# 按 Shift+F10 执行或将其替换为您的代码。
-# 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
+from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+from app.database import (
+    create_target,
+    delete_target,
+    get_targets,
+    initialize_database,
+    set_target_active,
+    update_target,
+)
+from app.schemas import ActiveUpdate, TargetInput
 
 
-def print_hi(name):
-    # 在下面的代码行中使用断点来调试脚本。
-    print(f'Hi, {name}')  # 按 Ctrl+F8 切换断点。
+TEMPLATE_DIRECTORY = Path(__file__).resolve().parent / "app" / "templates"
+templates = Jinja2Templates(directory=str(TEMPLATE_DIRECTORY))
 
 
-# 按装订区域中的绿色按钮以运行脚本。
-if __name__ == '__main__':
-    print_hi('PyCharm')
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    initialize_database()
+    yield
 
-# 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
+
+app = FastAPI(title="求职 Agent", lifespan=lifespan)
+
+
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={},
+    )
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
+@app.get("/api/targets")
+def list_job_targets():
+    return get_targets()
+
+
+@app.post("/api/targets", status_code=status.HTTP_201_CREATED)
+def add_job_target(target: TargetInput):
+    return create_target(
+        title=target.title,
+        keywords=target.keywords,
+        cities=target.cities,
+    )
+
+
+@app.put("/api/targets/{target_id}")
+def edit_job_target(target_id: int, target: TargetInput):
+    updated = update_target(
+        target_id=target_id,
+        title=target.title,
+        keywords=target.keywords,
+        cities=target.cities,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="求职方向不存在")
+    return updated
+
+
+@app.patch("/api/targets/{target_id}/active")
+def change_job_target_status(target_id: int, update: ActiveUpdate):
+    updated = set_target_active(target_id=target_id, is_active=update.is_active)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="求职方向不存在")
+    return updated
+
+
+@app.delete("/api/targets/{target_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_job_target(target_id: int):
+    deleted = delete_target(target_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="求职方向不存在")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -1,8 +1,11 @@
 .venv/
+data/
 __pycache__/
 *.py[cod]
 .idea/
 .pytest_cache/
+tests/__pycache__/
+tests/tmp*/
 .env
 .env.*
 !.env.example

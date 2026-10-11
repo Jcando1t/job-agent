@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>求职方向 | 求职 Agent</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202a3a;
+      --muted: #667085;
+      --line: #e5e9f0;
+      --blue: #315efb;
+      --blue-dark: #244bd0;
+      --surface: #ffffff;
+      --canvas: #f5f7fb;
+      --green: #16845b;
+      --amber: #a66006;
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); }
+    .shell { width: min(1100px, calc(100% - 40px)); margin: 0 auto; padding: 38px 0 64px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 28px; }
+    .eyebrow { color: var(--blue); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 7px 0 8px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -.04em; }
+    .subtitle { margin: 0; color: var(--muted); line-height: 1.6; }
+    .badge { flex: none; padding: 9px 13px; border: 1px solid #d9e1ff; border-radius: 999px; background: #eef2ff; color: #2847b9; font-size: 13px; font-weight: 650; }
+    .layout { display: grid; grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel { padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 28px rgba(27, 39, 67, .04); }
+    h2 { margin: 0 0 7px; font-size: 19px; letter-spacing: -.02em; }
+    .hint { margin: 0 0 19px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    label { display: block; margin: 15px 0 7px; font-size: 13px; font-weight: 650; }
+    input[type="text"] { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #d7dce5; border-radius: 9px; outline: none; color: var(--ink); font: inherit; font-size: 14px; }
+    input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(49, 94, 251, .12); }
+    .city-list { display: flex; flex-wrap: wrap; gap: 9px; }
+    .city-choice { display: inline-flex; align-items: center; gap: 7px; margin: 0; padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; color: #354052; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .city-choice input { accent-color: var(--blue); }
+    .field-note { margin: 7px 0 0; color: var(--muted); font-size: 12px; }
+    button { min-height: 37px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: white; color: #344054; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+    button:hover { border-color: #b9c5df; background: #f9faff; }
+    button.primary { width: 100%; margin-top: 20px; border-color: var(--blue); background: var(--blue); color: white; }
+    button.primary:hover { background: var(--blue-dark); }
+    button.danger { color: #b42318; }
+    .list-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .count { color: var(--muted); font-size: 13px; }
+    .target-list { display: grid; gap: 12px; }
+    .target-card { padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .target-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .target-title { margin: 0; font-size: 17px; line-height: 1.35; }
+    .status { flex: none; padding: 5px 9px; border-radius: 999px; background: #e9f7f1; color: var(--green); font-size: 11px; font-weight: 750; }
+    .status.paused { background: #fff4e5; color: var(--amber); }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+    .chip { padding: 5px 8px; border-radius: 6px; background: #f0f3f9; color: #475467; font-size: 12px; }
+    .keyword-line { margin: 0 0 13px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    details.edit-panel { margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line); }
+    details summary { color: var(--blue); font-size: 13px; font-weight: 650; cursor: pointer; }
+    .edit-fields { padding-top: 5px; }
+    .edit-fields .primary { width: auto; margin-top: 14px; }
+    .empty { padding: 34px 18px; border: 1px dashed #cfd6e3; border-radius: 12px; color: var(--muted); text-align: center; line-height: 1.6; }
+    .notice { min-height: 20px; margin: 12px 0 0; color: #b42318; font-size: 13px; }
+    @media (max-width: 760px) { .shell { width: min(100% - 24px, 560px); padding-top: 25px; } header { display: block; } .badge { display: inline-block; margin-top: 14px; } .layout { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <div class="eyebrow">Job search workspace</div>
+        <h1>求职方向</h1>
+        <p class="subtitle">先告诉 Agent 你想找什么工作。不同方向可以分别设置关键词和城市。</p>
+      </div>
+      <div class="badge">第一版 · 本地保存</div>
+    </header>
+
+    <div class="layout">
+      <section class="panel" aria-labelledby="add-heading">
+        <h2 id="add-heading">添加求职方向</h2>
+        <p class="hint">可以先添加一个方向，之后随时修改或增加其他目标。</p>
+        <form id="add-form">
+          <label for="title">岗位名称</label>
+          <input id="title" name="title" type="text" maxlength="80" placeholder="例如：AI Agent 应用开发工程师" required>
+
+          <label for="keywords">搜索关键词</label>
+          <input id="keywords" name="keywords" type="text" maxlength="500" placeholder="用逗号分隔，例如：智能体, LLM 应用, Python">
+
+          <label>城市</label>
+          <div class="city-list">
+            <label class="city-choice"><input type="checkbox" name="city" value="北京" checked> 北京</label>
+            <label class="city-choice"><input type="checkbox" name="city" value="天津" checked> 天津</label>
+          </div>
+          <label for="custom-cities">其他城市</label>
+          <input id="custom-cities" name="custom-cities" type="text" placeholder="可选，多个城市用逗号分隔">
+          <p class="field-note">至少选择或填写一个城市。</p>
+          <button class="primary" type="submit">保存求职方向</button>
+          <p class="notice" id="form-notice" role="alert"></p>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="list-heading">
+        <div class="list-heading">
+          <div>
+            <h2 id="list-heading">已保存的方向</h2>
+            <span class="count" id="target-count">正在读取…</span>
+          </div>
+        </div>
+        <div class="target-list" id="target-list" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const listElement = document.querySelector("#target-list");
+    const countElement = document.querySelector("#target-count");
+    const noticeElement = document.querySelector("#form-notice");
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[character]);
+    }
+
+    function collectCities(form) {
+      const selected = Array.from(form.querySelectorAll('input[name="city"]:checked'))
+        .map((input) => input.value);
+      const custom = form.querySelector('[name="custom-cities"]');
+      if (custom) {
+        selected.push(...custom.value.split(/[，,]/).map((city) => city.trim()).filter(Boolean));
+      }
+      return [...new Set(selected)];
+    }
+
+    async function request(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: { "Content-Type": "application/json", ...(options.headers || {}) }
+      });
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        throw new Error(detail.detail || "操作失败，请稍后重试");
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
+    function renderTarget(target) {
+      const cities = target.cities.map((city) => `<span class="chip">${escapeHtml(city)}</span>`).join("");
+      const cityCheckboxes = ["北京", "天津"].map((city) => `
+        <label class="city-choice"><input type="checkbox" name="city" value="${city}" ${target.cities.includes(city) ? "checked" : ""}> ${city}</label>
+      `).join("");
+      const customCities = target.cities.filter((city) => !["北京", "天津"].includes(city)).join(", ");
+      const keywords = target.keywords || "暂未填写关键词";
+      const statusText = target.is_active ? "已启用" : "已暂停";
+
+      return `
+        <article class="target-card" data-id="${target.id}">
+          <div class="target-top">
+            <h3 class="target-title">${escapeHtml(target.title)}</h3>
+            <span class="status ${target.is_active ? "" : "paused"}">${statusText}</span>
+          </div>
+          <div class="chips">${cities}</div>
+          <p class="keyword-line">关键词：${escapeHtml(keywords)}</p>
+          <div class="actions">
+            <button type="button" data-action="toggle">${target.is_active ? "暂停" : "启用"}</button>
+            <button type="button" data-action="delete" class="danger">删除</button>
+          </div>
+          <details class="edit-panel">
+            <summary>编辑方向</summary>
+            <form class="edit-form edit-fields">
+              <label>岗位名称</label>
+              <input name="title" type="text" maxlength="80" value="${escapeHtml(target.title)}" required>
+              <label>搜索关键词</label>
+              <input name="keywords" type="text" maxlength="500" value="${escapeHtml(target.keywords)}">
+              <label>城市</label>
+              <div class="city-list">${cityCheckboxes}</div>
+              <label>其他城市</label>
+              <input name="custom-cities" type="text" value="${escapeHtml(customCities)}" placeholder="多个城市用逗号分隔">
+              <p class="field-note">至少选择或填写一个城市。</p>
+              <button class="primary" type="submit">保存修改</button>
+              <p class="notice" role="alert"></p>
+            </form>
+          </details>
+        </article>
+      `;
+    }
+
+    async function refreshTargets() {
+      const targets = await request("/api/targets");
+      countElement.textContent = `${targets.length} 个方向`;
+      listElement.innerHTML = targets.length
+        ? targets.map(renderTarget).join("")
+        : '<div class="empty">还没有求职方向。<br>从左侧添加一个目标，Agent 就知道该按什么条件帮你找工作。</div>';
+    }
+
+    document.querySelector("#add-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      noticeElement.textContent = "";
+      const form = event.currentTarget;
+      const cities = collectCities(form);
+      if (!cities.length) {
+        noticeElement.textContent = "请至少选择或填写一个城市。";
+        return;
+      }
+
+      try {
+        await request("/api/targets", {
+          method: "POST",
+          body: JSON.stringify({
+            title: form.elements.title.value,
+            keywords: form.elements.keywords.value,
+            cities
+          })
+        });
+        form.reset();
+        form.querySelectorAll('input[name="city"]').forEach((input) => { input.checked = true; });
+        await refreshTargets();
+      } catch (error) {
+        noticeElement.textContent = error.message;
+      }
+    });
+
+    listElement.addEventListener("submit", async (event) => {
+      if (!event.target.matches(".edit-form")) return;
+      event.preventDefault();
+      const form = event.target;
+      const card = form.closest("[data-id]");
+      const notice = form.querySelector(".notice");
+      const cities = collectCities(form);
+      notice.textContent = "";
+      if (!cities.length) {
+        notice.textContent = "请至少选择或填写一个城市。";
+        return;
+      }
+
+      try {
+        await request(`/api/targets/${card.dataset.id}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            title: form.elements.title.value,
+            keywords: form.elements.keywords.value,
+            cities
+          })
+        });
+        await refreshTargets();
+      } catch (error) {
+        notice.textContent = error.message;
+      }
+    });
+
+    listElement.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const card = button.closest("[data-id]");
+      const targetId = card.dataset.id;
+
+      try {
+        if (button.dataset.action === "delete") {
+          if (!window.confirm("确定删除这个求职方向吗？")) return;
+          await request(`/api/targets/${targetId}`, { method: "DELETE" });
+        } else {
+          const currentlyActive = card.querySelector(".status").classList.contains("paused") === false;
+          await request(`/api/targets/${targetId}/active`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_active: !currentlyActive })
+          });
+        }
+        await refreshTargets();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
+    refreshTargets().catch((error) => {
+      countElement.textContent = "读取失败";
+      listElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    });
+  </script>
+</body>
+</html>
