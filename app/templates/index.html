@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>求职方向 | 求职 Agent</title>
+  <title>简历工作台 | 求职 Agent</title>
   <style>
     :root {
       color-scheme: light;
@@ -20,19 +20,24 @@
     }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--canvas); color: var(--ink); }
-    .shell { width: min(1100px, calc(100% - 40px)); margin: 0 auto; padding: 38px 0 64px; }
+    .shell { display: flex; flex-direction: column; width: min(1100px, calc(100% - 40px)); margin: 0 auto; padding: 38px 0 64px; }
     header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 28px; }
     .eyebrow { color: var(--blue); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
     h1 { margin: 7px 0 8px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -.04em; }
     .subtitle { margin: 0; color: var(--muted); line-height: 1.6; }
     .badge { flex: none; padding: 9px 13px; border: 1px solid #d9e1ff; border-radius: 999px; background: #eef2ff; color: #2847b9; font-size: 13px; font-weight: 650; }
+    .module-index { position: sticky; top: 12px; z-index: 10; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .94); box-shadow: 0 6px 18px rgba(27, 39, 67, .06); backdrop-filter: blur(8px); }
+    .module-index a { padding: 7px 10px; border-radius: 7px; color: #475467; font-size: 13px; font-weight: 650; text-decoration: none; }
+    .module-index a:hover, .module-index a:focus-visible { background: #eef2ff; color: var(--blue-dark); outline: none; }
+    .module-anchor { scroll-margin-top: 84px; }
     .layout { display: grid; grid-template-columns: minmax(300px, 360px) minmax(0, 1fr); gap: 22px; align-items: start; }
     .panel { padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 28px rgba(27, 39, 67, .04); }
     h2 { margin: 0 0 7px; font-size: 19px; letter-spacing: -.02em; }
     .hint { margin: 0 0 19px; color: var(--muted); font-size: 13px; line-height: 1.55; }
     label { display: block; margin: 15px 0 7px; font-size: 13px; font-weight: 650; }
-    input[type="text"] { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #d7dce5; border-radius: 9px; outline: none; color: var(--ink); font: inherit; font-size: 14px; }
-    input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(49, 94, 251, .12); }
+    input[type="text"], input[type="url"], select, textarea { width: 100%; min-height: 42px; padding: 10px 12px; border: 1px solid #d7dce5; border-radius: 9px; outline: none; color: var(--ink); font: inherit; font-size: 14px; }
+    input[type="text"]:focus, input[type="url"]:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(49, 94, 251, .12); }
+    textarea { min-height: 110px; resize: vertical; line-height: 1.55; }
     .city-list { display: flex; flex-wrap: wrap; gap: 9px; }
     .city-choice { display: inline-flex; align-items: center; gap: 7px; margin: 0; padding: 8px 11px; border: 1px solid var(--line); border-radius: 8px; color: #354052; font-size: 13px; font-weight: 500; cursor: pointer; }
     .city-choice input { accent-color: var(--blue); }
@@ -60,7 +65,46 @@
     .edit-fields .primary { width: auto; margin-top: 14px; }
     .empty { padding: 34px 18px; border: 1px dashed #cfd6e3; border-radius: 12px; color: var(--muted); text-align: center; line-height: 1.6; }
     .notice { min-height: 20px; margin: 12px 0 0; color: #b42318; font-size: 13px; }
-    @media (max-width: 760px) { .shell { width: min(100% - 24px, 560px); padding-top: 25px; } header { display: block; } .badge { display: inline-block; margin-top: 14px; } .layout { grid-template-columns: 1fr; } }
+    .jobs-panel { margin-top: 22px; }
+    .job-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+    .job-form .wide { grid-column: 1 / -1; }
+    .job-form .primary { grid-column: 1 / -1; }
+    .job-list { display: grid; gap: 12px; margin-top: 22px; }
+    .job-card { padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .job-meta { margin: 10px 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .job-description { margin: 10px 0 14px; color: #475467; font-size: 13px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .job-link { color: var(--blue); font-size: 13px; }
+    .job-form .field-note { grid-column: 1 / -1; }
+    .job-form .notice { grid-column: 1 / -1; }
+    .knowledge-list { display: grid; gap: 12px; margin-top: 22px; }
+    .knowledge-card { padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .profile-block { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+    .profile-block h3 { margin: 0 0 7px; font-size: 16px; }
+    .profile-block .hint { margin-bottom: 12px; }
+    .resume-editor { display: grid; gap: 12px; }
+    .resume-editor[hidden] { display: none; }
+    .resume-compare { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    .resume-compare-column { min-width: 0; }
+    .resume-compare-column > label { margin-top: 0; }
+    .resume-original-preview, .resume-draft-preview { min-height: 360px; }
+    .resume-original-preview { background: #f8fafc; color: #475467; }
+    .resume-editor textarea { min-height: 360px; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
+    .resume-source { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .resume-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .resume-option { padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: #fbfcff; }
+    .resume-option h3 { margin: 0 0 7px; font-size: 15px; }
+    .resume-option p { min-height: 42px; margin: 0 0 12px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .resume-option textarea { min-height: 130px; margin-bottom: 8px; }
+    .resume-option input[type="file"] { width: 100%; margin: 5px 0 9px; color: var(--muted); font: inherit; font-size: 13px; }
+    .resume-option button { width: 100%; }
+    .resume-mode { margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: #eef2ff; color: #2847b9; font-size: 13px; line-height: 1.5; }
+    .resume-list { display: grid; gap: 12px; margin-top: 22px; }
+    .resume-source-list { display: grid; gap: 12px; margin-top: 16px; }
+    .resume-source-card { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcff; }
+    .resume-card { padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .resume-preview { margin: 10px 0 0; max-height: 220px; overflow: auto; white-space: pre-wrap; color: #475467; font-size: 13px; line-height: 1.65; }
+    @media (max-width: 560px) { .job-form, .resume-options, .resume-compare { grid-template-columns: 1fr; } .job-form .wide, .job-form .primary, .job-form .field-note, .job-form .notice { grid-column: auto; } }
+    @media (max-width: 760px) { .shell { width: min(100% - 24px, 560px); padding-top: 25px; } header { display: block; } .badge { display: inline-block; margin-top: 14px; } .layout { grid-template-columns: 1fr; } .module-index { top: 8px; overflow-x: auto; flex-wrap: nowrap; } .module-index a { flex: none; } }
   </style>
 </head>
 <body>
@@ -68,13 +112,160 @@
     <header>
       <div>
         <div class="eyebrow">Job search workspace</div>
-        <h1>求职方向</h1>
-        <p class="subtitle">先告诉 Agent 你想找什么工作。不同方向可以分别设置关键词和城市。</p>
+        <h1>简历工作台</h1>
+        <p class="subtitle">先上传已有简历，再补充个人资料形成知识库，最后基于真实经历升级简历。</p>
       </div>
       <div class="badge">第一版 · 本地保存</div>
     </header>
 
-    <div class="layout">
+    <nav class="module-index" aria-label="页面模块索引">
+      <a href="#resume-module">1. 上传简历</a>
+      <a href="#knowledge-module">2. 个人知识库</a>
+      <a href="#upgrade-module">3. 升级简历</a>
+      <a href="#targets-module">4. 求职方向</a>
+      <a href="#jobs-module">5. 岗位记录</a>
+    </nav>
+
+    <section id="resume-module" class="panel jobs-panel resume-panel module-anchor" aria-labelledby="resume-heading">
+      <h2 id="resume-heading">步骤 1 · 上传已有简历</h2>
+      <p class="hint">先保存你的原始简历，再继续补充个人资料。原稿会单独保存在本地，不会被覆盖。</p>
+      <div class="resume-options">
+        <div class="resume-option">
+          <h3>载入已有简历</h3>
+          <p>可粘贴简历，或选择纯文本 `.txt` / `.md` 文件。原文会保存为独立材料，不会覆盖个人资料。</p>
+          <input id="resume-import-file" type="file" accept=".txt,.md,text/plain,text/markdown">
+          <textarea id="resume-import-content" maxlength="30000" placeholder="也可以直接把已有简历粘贴到这里"></textarea>
+          <button type="button" id="load-existing-resume">保存并载入原始简历</button>
+        </div>
+      </div>
+      <div class="list-heading">
+        <div>
+          <h2>原始简历材料</h2>
+          <span class="count" id="resume-source-count">正在读取…</span>
+        </div>
+      </div>
+      <div class="resume-source-list" id="resume-source-list" aria-live="polite"></div>
+    </section>
+
+    <section id="knowledge-module" class="panel jobs-panel knowledge-panel module-anchor" aria-labelledby="knowledge-heading">
+      <h2 id="knowledge-heading">步骤 2 · 补充个人资料，建立知识库</h2>
+      <p class="hint">补充基本信息，并至少保存一条教育、工作、项目、技能或成果资料。后续改进简历时会以这些真实内容作为依据。</p>
+      <div class="profile-block">
+        <h3>基本信息与求职意向</h3>
+        <p class="hint">姓名、联系方式和目标岗位单独填写，保存后会作为个人知识库中的“个人信息”条目。</p>
+        <form id="profile-form" class="job-form">
+          <div>
+            <label for="profile-name">姓名</label>
+            <input id="profile-name" name="name" type="text" maxlength="80" placeholder="例如：张三" required>
+          </div>
+          <div>
+            <label for="profile-phone">电话</label>
+            <input id="profile-phone" name="phone" type="text" maxlength="40" placeholder="可选">
+          </div>
+          <div>
+            <label for="profile-email">邮箱</label>
+            <input id="profile-email" name="email" type="text" maxlength="120" placeholder="可选">
+          </div>
+          <div>
+            <label for="profile-city">所在城市</label>
+            <input id="profile-city" name="city" type="text" maxlength="80" placeholder="例如：北京，可选">
+          </div>
+          <div class="wide">
+            <label for="profile-goal">求职方向</label>
+            <input id="profile-goal" name="goal" type="text" maxlength="200" placeholder="例如：AI Agent 应用开发工程师">
+          </div>
+          <div class="wide">
+            <label for="profile-summary">个人简介</label>
+            <textarea id="profile-summary" name="summary" maxlength="3000" placeholder="用几句话介绍你的专业背景、主要优势或求职重点，可后续补充"></textarea>
+          </div>
+          <p class="field-note">这些内容只保存在本地；保存后可以继续编辑。</p>
+          <button class="primary" type="submit">保存基本信息</button>
+          <p class="notice" id="profile-form-notice" role="alert"></p>
+        </form>
+      </div>
+      <h3>教育、技能、工作、项目和成果</h3>
+      <p class="hint">每段经历单独保存，尽量写清职责、使用技术、结果和可验证的数据。</p>
+      <form id="knowledge-form" class="job-form">
+        <div>
+          <label for="knowledge-category">资料类型</label>
+          <select id="knowledge-category" name="category">
+            <option>教育经历</option>
+            <option>工作经历</option>
+            <option>项目经验</option>
+            <option>技能</option>
+            <option>成果</option>
+          </select>
+        </div>
+        <div>
+          <label for="knowledge-title">条目名称</label>
+          <input id="knowledge-title" name="title" type="text" maxlength="120" placeholder="例如：智能问答项目" required>
+        </div>
+        <div>
+          <label for="knowledge-organization">学校、公司或项目</label>
+          <input id="knowledge-organization" name="organization" type="text" maxlength="120" placeholder="可选">
+        </div>
+        <div>
+          <label for="knowledge-period">时间</label>
+          <input id="knowledge-period" name="period" type="text" maxlength="80" placeholder="例如：2024.03–2024.08，可选">
+        </div>
+        <div class="wide">
+          <label for="knowledge-content">经历、技能或成果详情</label>
+          <textarea id="knowledge-content" name="content" maxlength="10000" placeholder="写下你实际做过的工作、使用的技能和可以证明的结果" required></textarea>
+        </div>
+        <div class="wide">
+          <label for="knowledge-source">来源说明</label>
+          <input id="knowledge-source" name="source_note" type="text" maxlength="300" placeholder="例如：本人补充；未来可注明来自哪份材料">
+        </div>
+        <p class="field-note">请只记录真实经历；后续升级材料会引用这些条目作为依据。</p>
+        <button class="primary" type="submit">保存资料</button>
+        <p class="notice" id="knowledge-form-notice" role="alert"></p>
+      </form>
+
+      <div class="list-heading">
+        <div>
+          <h2>已保存的个人资料</h2>
+          <span class="count" id="knowledge-count">正在读取…</span>
+        </div>
+      </div>
+      <div class="knowledge-list" id="knowledge-list" aria-live="polite"></div>
+    </section>
+
+    <section id="upgrade-module" class="panel jobs-panel module-anchor" aria-labelledby="upgrade-heading">
+      <h2 id="upgrade-heading">步骤 3 · 基于原稿和知识库升级简历</h2>
+      <p class="hint" id="resume-upgrade-lock">请先保存一份原始简历，并在个人知识库中补充至少一条经历、技能或成果资料。</p>
+      <div class="resume-editor" id="resume-upgrade-editor" hidden>
+        <p class="resume-mode" id="resume-mode">请选择上方保存的原始简历，载入后即可开始编辑。</p>
+        <div class="resume-compare">
+          <div class="resume-compare-column">
+            <label for="resume-original-preview">原始简历（只读）</label>
+            <textarea id="resume-original-preview" class="resume-original-preview" readonly placeholder="载入原始简历后显示原文。"></textarea>
+          </div>
+          <div class="resume-compare-column">
+            <label for="resume-content">升级草稿（可编辑）</label>
+            <textarea id="resume-content" class="resume-draft-preview" maxlength="30000" placeholder="基于已有简历和个人知识库编辑升级内容。"></textarea>
+          </div>
+        </div>
+        <label for="resume-title">升级版本名称</label>
+        <input id="resume-title" type="text" maxlength="120" value="简历升级草稿">
+        <p class="resume-source" id="resume-source">尚未载入简历原文。</p>
+        <div class="actions">
+          <button type="button" class="primary" id="save-resume">保存为新版本</button>
+        </div>
+        <p class="notice" id="resume-notice" role="alert"></p>
+      </div>
+      <div class="list-heading">
+        <div>
+          <h2>已保存的简历版本</h2>
+          <span class="count" id="resume-count">正在读取…</span>
+        </div>
+      </div>
+      <div class="resume-list" id="resume-list" aria-live="polite"></div>
+    </section>
+
+
+
+
+    <div id="targets-module" class="layout module-anchor">
       <section class="panel" aria-labelledby="add-heading">
         <h2 id="add-heading">添加求职方向</h2>
         <p class="hint">可以先添加一个方向，之后随时修改或增加其他目标。</p>
@@ -108,12 +299,98 @@
         <div class="target-list" id="target-list" aria-live="polite"></div>
       </section>
     </div>
+
+    <section id="jobs-module" class="panel jobs-panel module-anchor" aria-labelledby="jobs-heading">
+      <h2 id="jobs-heading">手动录入岗位</h2>
+      <p class="hint">先把感兴趣的岗位集中记录下来。暂时不依赖招聘网站搜索。</p>
+      <form id="job-form" class="job-form">
+        <div>
+          <label for="job-title">岗位名称</label>
+          <input id="job-title" name="title" type="text" maxlength="120" placeholder="例如：Python 后端开发工程师" required>
+        </div>
+        <div>
+          <label for="job-company">公司</label>
+          <input id="job-company" name="company" type="text" maxlength="120" placeholder="可选">
+        </div>
+        <div>
+          <label for="job-city">城市</label>
+          <input id="job-city" name="city" type="text" maxlength="80" placeholder="例如：北京，可选">
+        </div>
+        <div>
+          <label for="job-source">来源</label>
+          <input id="job-source" name="source" type="text" maxlength="80" value="手动录入" placeholder="例如：BOSS 直聘">
+        </div>
+        <div class="wide">
+          <label for="job-target">关联求职方向</label>
+          <select id="job-target" name="target_id">
+            <option value="">暂不关联</option>
+          </select>
+        </div>
+        <div class="wide">
+          <label for="job-url">原始岗位链接</label>
+          <input id="job-url" name="original_url" type="url" maxlength="1000" placeholder="可选，粘贴 http:// 或 https:// 链接">
+        </div>
+        <div class="wide">
+          <label for="job-description">岗位描述</label>
+          <textarea id="job-description" name="description" maxlength="10000" placeholder="可选，粘贴岗位职责和要求"></textarea>
+        </div>
+        <p class="field-note">岗位名称必填；其余信息可以之后补充。</p>
+        <button class="primary" type="submit">保存岗位</button>
+        <p class="notice" id="job-form-notice" role="alert"></p>
+      </form>
+
+      <div class="list-heading">
+        <div>
+          <h2>已记录的岗位</h2>
+          <span class="count" id="job-count">正在读取…</span>
+        </div>
+      </div>
+      <div class="job-list" id="job-list" aria-live="polite"></div>
+    </section>
+
   </main>
 
   <script>
     const listElement = document.querySelector("#target-list");
     const countElement = document.querySelector("#target-count");
     const noticeElement = document.querySelector("#form-notice");
+    const jobListElement = document.querySelector("#job-list");
+    const jobCountElement = document.querySelector("#job-count");
+    const jobNoticeElement = document.querySelector("#job-form-notice");
+    const knowledgeListElement = document.querySelector("#knowledge-list");
+    const knowledgeCountElement = document.querySelector("#knowledge-count");
+    const knowledgeNoticeElement = document.querySelector("#knowledge-form-notice");
+    const profileFormElement = document.querySelector("#profile-form");
+    const profileNoticeElement = document.querySelector("#profile-form-notice");
+    const resumeTitleElement = document.querySelector("#resume-title");
+    const resumeOriginalElement = document.querySelector("#resume-original-preview");
+    const resumeContentElement = document.querySelector("#resume-content");
+    const resumeSourceElement = document.querySelector("#resume-source");
+    const resumeNoticeElement = document.querySelector("#resume-notice");
+    const resumeCountElement = document.querySelector("#resume-count");
+    const resumeListElement = document.querySelector("#resume-list");
+    const resumeSourceCountElement = document.querySelector("#resume-source-count");
+    const resumeSourceListElement = document.querySelector("#resume-source-list");
+    const resumeModeElement = document.querySelector("#resume-mode");
+    const resumeUpgradeLockElement = document.querySelector("#resume-upgrade-lock");
+    const resumeUpgradeEditorElement = document.querySelector("#resume-upgrade-editor");
+    const resumeImportFileElement = document.querySelector("#resume-import-file");
+    const resumeImportContentElement = document.querySelector("#resume-import-content");
+    let resumeSourceItemIds = [];
+    let selectedResumeSourceId = null;
+    let profileItemId = null;
+    let knowledgeItemCount = 0;
+    let hasExperienceKnowledge = false;
+
+    function updateResumeUpgradeGate() {
+      const ready = Boolean(selectedResumeSourceId && hasExperienceKnowledge);
+      resumeUpgradeEditorElement.hidden = !ready;
+      resumeUpgradeLockElement.hidden = ready;
+      if (ready) return;
+      resumeUpgradeLockElement.textContent = !selectedResumeSourceId
+        ? "请先在步骤 1 保存并载入一份原始简历。"
+        : "原始简历已载入。请在步骤 2 至少保存一条教育、工作、项目、技能或成果资料，再开始升级。";
+    }
 
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, (character) => ({
@@ -187,9 +464,284 @@
     async function refreshTargets() {
       const targets = await request("/api/targets");
       countElement.textContent = `${targets.length} 个方向`;
+      const targetSelect = document.querySelector("#job-target");
+      const selectedTargetId = targetSelect.value;
+      targetSelect.innerHTML = '<option value="">暂不关联</option>' + targets.map((target) =>
+        `<option value="${target.id}">${escapeHtml(target.title)}</option>`
+      ).join("");
+      if (targets.some((target) => String(target.id) === selectedTargetId)) {
+        targetSelect.value = selectedTargetId;
+      }
       listElement.innerHTML = targets.length
         ? targets.map(renderTarget).join("")
         : '<div class="empty">还没有求职方向。<br>从左侧添加一个目标，Agent 就知道该按什么条件帮你找工作。</div>';
+      await refreshJobs();
+    }
+
+    function renderJob(job) {
+      const company = job.company || "公司未填写";
+      const city = job.city || "城市未填写";
+      const target = job.target_title || "未关联求职方向";
+      const description = job.description
+        ? `<p class="job-description">${escapeHtml(job.description)}</p>`
+        : "";
+      const originalLink = job.original_url
+        ? `<p><a class="job-link" href="${escapeHtml(job.original_url)}" target="_blank" rel="noopener noreferrer">打开原始岗位链接</a></p>`
+        : "";
+
+      return `
+        <article class="job-card" data-id="${job.id}">
+          <div class="target-top">
+            <h3 class="target-title">${escapeHtml(job.title)}</h3>
+            <span class="chip">${escapeHtml(job.source)}</span>
+          </div>
+          <p class="job-meta">${escapeHtml(company)} · ${escapeHtml(city)}<br>求职方向：${escapeHtml(target)}</p>
+          ${originalLink}
+          ${description}
+          <div class="actions">
+            <button type="button" data-job-action="delete" class="danger">删除</button>
+          </div>
+          <details class="edit-panel">
+            <summary>编辑岗位</summary>
+            <form class="job-edit-form edit-fields job-form">
+              <div>
+                <label>岗位名称</label>
+                <input name="title" type="text" maxlength="120" value="${escapeHtml(job.title)}" required>
+              </div>
+              <div>
+                <label>公司</label>
+                <input name="company" type="text" maxlength="120" value="${escapeHtml(job.company)}">
+              </div>
+              <div>
+                <label>城市</label>
+                <input name="city" type="text" maxlength="80" value="${escapeHtml(job.city)}">
+              </div>
+              <div>
+                <label>来源</label>
+                <input name="source" type="text" maxlength="80" value="${escapeHtml(job.source)}">
+              </div>
+              <div class="wide">
+                <label>关联求职方向</label>
+                <select name="target_id">${targetOptions(job.target_id)}</select>
+              </div>
+              <div class="wide">
+                <label>原始岗位链接</label>
+                <input name="original_url" type="url" maxlength="1000" value="${escapeHtml(job.original_url)}">
+              </div>
+              <div class="wide">
+                <label>岗位描述</label>
+                <textarea name="description" maxlength="10000">${escapeHtml(job.description)}</textarea>
+              </div>
+              <button class="primary" type="submit">保存修改</button>
+              <p class="notice" role="alert"></p>
+            </form>
+          </details>
+        </article>
+      `;
+    }
+
+    function targetOptions(selectedTargetId) {
+      const currentTargets = Array.from(document.querySelectorAll("#job-target option"))
+        .filter((option) => option.value);
+      const options = ['<option value="">暂不关联</option>', ...currentTargets.map((option) =>
+        `<option value="${option.value}" ${String(option.value) === String(selectedTargetId || "") ? "selected" : ""}>${escapeHtml(option.textContent)}</option>`
+      )];
+      return options.join("");
+    }
+
+    function jobPayload(form) {
+      return {
+        title: form.elements.title.value,
+        company: form.elements.company.value,
+        city: form.elements.city.value,
+        source: form.elements.source.value,
+        original_url: form.elements.original_url.value,
+        description: form.elements.description.value,
+        target_id: form.elements.target_id.value ? Number(form.elements.target_id.value) : null
+      };
+    }
+
+    async function refreshJobs() {
+      const jobs = await request("/api/jobs");
+      jobCountElement.textContent = `${jobs.length} 个岗位`;
+      jobListElement.innerHTML = jobs.length
+        ? jobs.map(renderJob).join("")
+        : '<div class="empty">还没有记录岗位。<br>可以先手动添加一个感兴趣的岗位。</div>';
+    }
+
+    function renderKnowledgeItem(item) {
+      const organization = item.organization || "未填写单位或项目";
+      const period = item.period || "时间未填写";
+      const source = item.source_note || "本人手动录入";
+      return `
+        <article class="knowledge-card" data-id="${item.id}">
+          <div class="target-top">
+            <h3 class="target-title">${escapeHtml(item.title)}</h3>
+            <span class="chip">${escapeHtml(item.category)}</span>
+          </div>
+          <p class="job-meta">${escapeHtml(organization)} · ${escapeHtml(period)}<br>来源：${escapeHtml(source)}</p>
+          <p class="job-description">${escapeHtml(item.content)}</p>
+          <div class="actions">
+            <button type="button" data-knowledge-action="delete" class="danger">删除</button>
+          </div>
+          <details class="edit-panel">
+            <summary>编辑资料</summary>
+            <form class="knowledge-edit-form job-form edit-fields">
+              <div>
+                <label>资料类型</label>
+                <select name="category">
+                  ${["个人信息", "教育经历", "工作经历", "项目经验", "技能", "成果"].map((category) =>
+                    `<option ${category === item.category ? "selected" : ""}>${category}</option>`
+                  ).join("")}
+                </select>
+              </div>
+              <div>
+                <label>条目名称</label>
+                <input name="title" type="text" maxlength="120" value="${escapeHtml(item.title)}" required>
+              </div>
+              <div>
+                <label>学校、公司或项目</label>
+                <input name="organization" type="text" maxlength="120" value="${escapeHtml(item.organization)}">
+              </div>
+              <div>
+                <label>时间</label>
+                <input name="period" type="text" maxlength="80" value="${escapeHtml(item.period)}">
+              </div>
+              <div class="wide">
+                <label>经历、技能或成果详情</label>
+                <textarea name="content" maxlength="10000" required>${escapeHtml(item.content)}</textarea>
+              </div>
+              <div class="wide">
+                <label>来源说明</label>
+                <input name="source_note" type="text" maxlength="300" value="${escapeHtml(item.source_note)}">
+              </div>
+              <button class="primary" type="submit">保存修改</button>
+              <p class="notice" role="alert"></p>
+            </form>
+          </details>
+        </article>
+      `;
+    }
+
+    function knowledgePayload(form) {
+      return {
+        category: form.elements.category.value,
+        title: form.elements.title.value,
+        organization: form.elements.organization.value,
+        period: form.elements.period.value,
+        content: form.elements.content.value,
+        source_note: form.elements.source_note.value
+      };
+    }
+
+    function profilePayload(form) {
+      const lines = [
+        `姓名：${form.elements.name.value.trim()}`,
+        `电话：${form.elements.phone.value.trim() || "未填写"}`,
+        `邮箱：${form.elements.email.value.trim() || "未填写"}`,
+        `求职方向：${form.elements.goal.value.trim() || "未填写"}`,
+        `个人简介：${form.elements.summary.value.trim() || "未填写"}`
+      ];
+      return {
+        category: "个人信息",
+        title: "基本信息与求职意向",
+        organization: form.elements.city.value.trim(),
+        period: "",
+        content: lines.join("\n"),
+        source_note: "本人填写"
+      };
+    }
+
+    function fillProfileForm(item) {
+      if (!item || item.title !== "基本信息与求职意向") return;
+      const values = {};
+      item.content.split("\n").forEach((line) => {
+        const separator = line.indexOf("：");
+        if (separator > 0) values[line.slice(0, separator)] = line.slice(separator + 1);
+      });
+      profileFormElement.elements.name.value = values["姓名"] || "";
+      profileFormElement.elements.phone.value = values["电话"] === "未填写" ? "" : (values["电话"] || "");
+      profileFormElement.elements.email.value = values["邮箱"] === "未填写" ? "" : (values["邮箱"] || "");
+      profileFormElement.elements.goal.value = values["求职方向"] === "未填写" ? "" : (values["求职方向"] || "");
+      profileFormElement.elements.summary.value = values["个人简介"] === "未填写" ? "" : (values["个人简介"] || "");
+      profileFormElement.elements.city.value = item.organization || "";
+    }
+
+    async function refreshKnowledge() {
+      const items = await request("/api/knowledge");
+      knowledgeItemCount = items.length;
+      hasExperienceKnowledge = items.some((item) => item.category !== "个人信息");
+      const profileItem = items.find((item) => item.category === "个人信息" && item.title === "基本信息与求职意向");
+      profileItemId = profileItem ? profileItem.id : null;
+      fillProfileForm(profileItem);
+      knowledgeCountElement.textContent = `${items.length} 条资料`;
+      knowledgeListElement.innerHTML = items.length
+        ? items.map(renderKnowledgeItem).join("")
+        : '<div class="empty">个人知识库还是空的。<br>可以先添加一段真实经历或一个项目。</div>';
+      updateResumeUpgradeGate();
+    }
+
+    function renderResume(resume) {
+      const sourceText = resume.source_item_ids.length
+        ? `依据：资料 ${resume.source_item_ids.map((id) => `#${id}`).join("、")}`
+        : "依据：没有关联个人资料";
+      return `
+        <article class="resume-card">
+          <div class="target-top">
+            <h3 class="target-title">版本 ${resume.version} · ${escapeHtml(resume.title)}</h3>
+            <span class="chip">本地保存</span>
+          </div>
+          <p class="resume-source">${sourceText}</p>
+          ${resume.source_resume_id ? `<p class="resume-source">原始简历材料：#${resume.source_resume_id}</p>` : ""}
+          <p class="resume-preview">${escapeHtml(resume.content)}</p>
+          <div class="actions"><button type="button" data-resume-action="delete" data-id="${resume.id}" class="danger">删除版本</button></div>
+        </article>
+      `;
+    }
+
+    async function refreshResumes() {
+      const resumes = await request("/api/resumes");
+      resumeCountElement.textContent = `${resumes.length} 个版本`;
+      resumeListElement.innerHTML = resumes.length
+        ? resumes.map(renderResume).join("")
+        : '<div class="empty">还没有保存升级版本。<br>基于原稿和个人资料完成修改后，可以保存为新版本。</div>';
+    }
+
+    function renderResumeSource(source) {
+      const filename = source.filename || "手动粘贴";
+      return `
+        <article class="resume-source-card" data-source-id="${source.id}">
+          <div class="target-top">
+            <h3 class="target-title">${escapeHtml(filename)}</h3>
+            <span class="chip">原始材料 #${source.id}</span>
+          </div>
+          <p class="job-meta">本地保存 · ${escapeHtml(source.created_at)}</p>
+          <div class="actions">
+            <button type="button" data-source-action="use">载入到升级草稿</button>
+            <button type="button" data-source-action="delete" class="danger">删除原文</button>
+          </div>
+        </article>
+      `;
+    }
+
+    async function refreshResumeSources() {
+      const sources = await request("/api/resume-sources");
+      resumeSourceCountElement.textContent = `${sources.length} 份原始简历`;
+      resumeSourceListElement.innerHTML = sources.length
+        ? sources.map(renderResumeSource).join("")
+        : '<div class="empty">尚未保存原始简历。请先在上方粘贴内容或载入文本文件。</div>';
+      updateResumeUpgradeGate();
+    }
+
+    function loadResumeSource(source) {
+      selectedResumeSourceId = source.id;
+      resumeTitleElement.value = "简历升级草稿";
+      resumeOriginalElement.value = source.content;
+      resumeContentElement.value = source.content;
+      resumeModeElement.textContent = `当前基于原始简历材料 #${source.id}。请结合个人知识库中的真实经历编辑升级内容。`;
+      resumeSourceElement.textContent = `原稿：${source.filename || "手动粘贴"}（材料 #${source.id}）。保存的升级版本会保留与原稿的关联。`;
+      updateResumeUpgradeGate();
+      if (hasExperienceKnowledge) resumeContentElement.focus();
     }
 
     document.querySelector("#add-form").addEventListener("submit", async (event) => {
@@ -270,9 +822,248 @@
       }
     });
 
+    document.querySelector("#job-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      jobNoticeElement.textContent = "";
+      try {
+        await request("/api/jobs", {
+          method: "POST",
+          body: JSON.stringify(jobPayload(form))
+        });
+        form.reset();
+        form.elements.source.value = "手动录入";
+        await refreshJobs();
+      } catch (error) {
+        jobNoticeElement.textContent = error.message;
+      }
+    });
+
+    jobListElement.addEventListener("submit", async (event) => {
+      if (!event.target.matches(".job-edit-form")) return;
+      event.preventDefault();
+      const form = event.target;
+      const card = form.closest("[data-id]");
+      const notice = form.querySelector(".notice");
+      notice.textContent = "";
+      try {
+        await request(`/api/jobs/${card.dataset.id}`, {
+          method: "PUT",
+          body: JSON.stringify(jobPayload(form))
+        });
+        await refreshJobs();
+      } catch (error) {
+        notice.textContent = error.message;
+      }
+    });
+
+    jobListElement.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-job-action]");
+      if (!button) return;
+      const card = button.closest("[data-id]");
+      if (!window.confirm("确定删除这个岗位记录吗？")) return;
+      try {
+        await request(`/api/jobs/${card.dataset.id}`, { method: "DELETE" });
+        await refreshJobs();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
+    document.querySelector("#knowledge-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      knowledgeNoticeElement.textContent = "";
+      try {
+        await request("/api/knowledge", {
+          method: "POST",
+          body: JSON.stringify(knowledgePayload(form))
+        });
+        form.reset();
+        await refreshKnowledge();
+      } catch (error) {
+        knowledgeNoticeElement.textContent = error.message;
+      }
+    });
+
+    profileFormElement.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      profileNoticeElement.textContent = "";
+      try {
+        const options = {
+          method: profileItemId ? "PUT" : "POST",
+          body: JSON.stringify(profilePayload(profileFormElement))
+        };
+        const path = profileItemId ? `/api/knowledge/${profileItemId}` : "/api/knowledge";
+        const saved = await request(path, options);
+        profileItemId = saved.id;
+        await refreshKnowledge();
+        profileNoticeElement.style.color = "var(--green)";
+        profileNoticeElement.textContent = "基本信息已保存到个人知识库。";
+      } catch (error) {
+        profileNoticeElement.style.color = "#b42318";
+        profileNoticeElement.textContent = error.message;
+      }
+    });
+
+    knowledgeListElement.addEventListener("submit", async (event) => {
+      if (!event.target.matches(".knowledge-edit-form")) return;
+      event.preventDefault();
+      const form = event.target;
+      const card = form.closest("[data-id]");
+      const notice = form.querySelector(".notice");
+      notice.textContent = "";
+      try {
+        await request(`/api/knowledge/${card.dataset.id}`, {
+          method: "PUT",
+          body: JSON.stringify(knowledgePayload(form))
+        });
+        await refreshKnowledge();
+      } catch (error) {
+        notice.textContent = error.message;
+      }
+    });
+
+    knowledgeListElement.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-knowledge-action]");
+      if (!button) return;
+      const card = button.closest("[data-id]");
+      if (!window.confirm("确定删除这条个人资料吗？")) return;
+      try {
+        await request(`/api/knowledge/${card.dataset.id}`, { method: "DELETE" });
+        await refreshKnowledge();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
+    resumeImportFileElement.addEventListener("change", () => {
+      const file = resumeImportFileElement.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        resumeImportContentElement.value = String(reader.result || "");
+      });
+      reader.addEventListener("error", () => {
+        resumeNoticeElement.textContent = "读取文件失败，请改用粘贴文本。";
+      });
+      reader.readAsText(file, "UTF-8");
+    });
+
+    document.querySelector("#load-existing-resume").addEventListener("click", async () => {
+      const content = resumeImportContentElement.value.trim();
+      resumeNoticeElement.textContent = "";
+      if (!content) {
+        resumeNoticeElement.textContent = "请先选择 .txt/.md 文件，或粘贴已有简历内容。";
+        return;
+      }
+      const file = resumeImportFileElement.files[0];
+      const filename = file ? file.name : "手动粘贴";
+      try {
+        const source = await request("/api/resume-sources", {
+          method: "POST",
+          body: JSON.stringify({ filename, content })
+        });
+        resumeImportContentElement.value = "";
+        resumeImportFileElement.value = "";
+        loadResumeSource(source);
+        await refreshResumeSources();
+        resumeNoticeElement.style.color = "var(--green)";
+        resumeNoticeElement.textContent = "原始简历已单独保存在本地。接下来请补充个人资料，再编辑升级草稿。";
+      } catch (error) {
+        resumeNoticeElement.style.color = "#b42318";
+        resumeNoticeElement.textContent = error.message;
+      }
+    });
+
+    resumeSourceListElement.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-source-action]");
+      if (!button) return;
+      const card = button.closest("[data-source-id]");
+      const sourceId = Number(card.dataset.sourceId);
+      if (button.dataset.sourceAction === "use") {
+        try {
+          const sources = await request("/api/resume-sources");
+          const source = sources.find((item) => item.id === sourceId);
+          if (source) loadResumeSource(source);
+        } catch (error) {
+          resumeNoticeElement.textContent = error.message;
+        }
+        return;
+      }
+      if (!window.confirm("确定删除这份原始简历材料吗？已保存的简历版本不会被删除。")) return;
+      try {
+        await request(`/api/resume-sources/${sourceId}`, { method: "DELETE" });
+        if (selectedResumeSourceId === sourceId) {
+          selectedResumeSourceId = null;
+          resumeOriginalElement.value = "";
+          resumeModeElement.textContent = "所选原始简历已删除。已打开的草稿仍在编辑区，可继续编辑或清空。";
+          resumeSourceElement.textContent = "原始材料已删除；保存版本时不会再关联该材料。";
+          updateResumeUpgradeGate();
+        }
+        await refreshResumeSources();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
+    document.querySelector("#save-resume").addEventListener("click", async () => {
+      resumeNoticeElement.textContent = "";
+      try {
+        if (!selectedResumeSourceId) {
+          throw new Error("请先载入并保存一份原始简历。")
+        }
+        if (!hasExperienceKnowledge) {
+          throw new Error("请先在个人知识库中至少保存一条教育、工作、项目、技能或成果资料。")
+        }
+        await request("/api/resumes", {
+          method: "POST",
+          body: JSON.stringify({
+            title: resumeTitleElement.value,
+            content: resumeContentElement.value,
+            source_item_ids: resumeSourceItemIds,
+            source_resume_id: selectedResumeSourceId
+          })
+        });
+        await refreshResumes();
+        resumeNoticeElement.textContent = "已保存为新版本。";
+        resumeNoticeElement.style.color = "var(--green)";
+      } catch (error) {
+        resumeNoticeElement.style.color = "#b42318";
+        resumeNoticeElement.textContent = error.message;
+      }
+    });
+
+    resumeListElement.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-resume-action='delete']");
+      if (!button || !window.confirm("确定删除这个简历版本吗？")) return;
+      try {
+        await request(`/api/resumes/${button.dataset.id}`, { method: "DELETE" });
+        await refreshResumes();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
     refreshTargets().catch((error) => {
       countElement.textContent = "读取失败";
       listElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    });
+    refreshJobs().catch((error) => {
+      jobCountElement.textContent = "读取失败";
+      jobListElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    });
+    refreshKnowledge().catch((error) => {
+      knowledgeCountElement.textContent = "读取失败";
+      knowledgeListElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    });
+    refreshResumes().catch((error) => {
+      resumeCountElement.textContent = "读取失败";
+      resumeListElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    });
+    refreshResumeSources().catch((error) => {
+      resumeSourceCountElement.textContent = "读取失败";
+      resumeSourceListElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
     });
   </script>
 </body>

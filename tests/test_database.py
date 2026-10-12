@@ -2,12 +2,25 @@ import unittest
 from pathlib import Path
 
 from app.database import (
+    create_job,
+    create_knowledge_item,
     create_target,
+    delete_job,
+    delete_knowledge_item,
     delete_target,
+    get_jobs,
+    get_knowledge_items,
+    get_resumes,
+    get_resume_sources,
     get_targets,
     initialize_database,
     set_target_active,
+    update_job,
+    update_knowledge_item,
     update_target,
+    create_resume,
+    create_resume_source,
+    delete_resume_source,
 )
 
 
@@ -61,6 +74,147 @@ class JobTargetDatabaseTests(unittest.TestCase):
         self.assertFalse(paused["is_active"])
         self.assertTrue(delete_target(created["id"], self.database_path))
         self.assertEqual(get_targets(self.database_path), [])
+
+    def test_job_can_be_created_updated_and_deleted(self) -> None:
+        target = create_target(
+            title="Python 后端开发",
+            keywords="Python, FastAPI",
+            cities=["北京"],
+            database_path=self.database_path,
+        )
+        created = create_job(
+            title="后端工程师",
+            company="示例科技",
+            city="北京",
+            source="手动录入",
+            original_url="https://example.com/jobs/1",
+            description="负责 Python 服务开发。",
+            target_id=target["id"],
+            database_path=self.database_path,
+        )
+
+        self.assertEqual(len(get_jobs(self.database_path)), 1)
+        self.assertEqual(created["target_title"], "Python 后端开发")
+
+        updated = update_job(
+            job_id=created["id"],
+            title="高级后端工程师",
+            company="另一家科技公司",
+            city="天津",
+            source="招聘网站",
+            original_url="https://example.com/jobs/2",
+            description="维护 Web API。",
+            target_id=None,
+            database_path=self.database_path,
+        )
+
+        self.assertEqual(updated["title"], "高级后端工程师")
+        self.assertEqual(updated["target_id"], None)
+        self.assertEqual(updated["original_url"], "https://example.com/jobs/2")
+        self.assertTrue(delete_job(created["id"], self.database_path))
+        self.assertEqual(get_jobs(self.database_path), [])
+        self.assertFalse(delete_job(created["id"], self.database_path))
+
+    def test_deleting_target_unlinks_jobs_without_deleting_them(self) -> None:
+        target = create_target(
+            title="数据分析",
+            keywords="SQL",
+            cities=["天津"],
+            database_path=self.database_path,
+        )
+        job = create_job(
+            title="数据分析师",
+            target_id=target["id"],
+            database_path=self.database_path,
+        )
+
+        self.assertTrue(delete_target(target["id"], self.database_path))
+
+        saved_jobs = get_jobs(self.database_path)
+        self.assertEqual(len(saved_jobs), 1)
+        self.assertEqual(saved_jobs[0]["id"], job["id"])
+        self.assertIsNone(saved_jobs[0]["target_id"])
+
+    def test_knowledge_item_can_be_created_updated_and_deleted(self) -> None:
+        created = create_knowledge_item(
+            category="项目经验",
+            title="智能问答项目",
+            organization="个人项目",
+            period="2025.01–2025.03",
+            content="使用 Python 构建检索问答原型。",
+            source_note="本人手动补充",
+            database_path=self.database_path,
+        )
+
+        initialize_database(self.database_path)
+        saved_items = get_knowledge_items(self.database_path)
+        self.assertEqual(len(saved_items), 1)
+        self.assertEqual(saved_items[0]["id"], created["id"])
+        self.assertEqual(saved_items[0]["source_note"], "本人手动补充")
+
+        updated = update_knowledge_item(
+            item_id=created["id"],
+            category="成果",
+            title="问答检索效果改进",
+            organization="个人项目",
+            period="2025.01–2025.03",
+            content="基于测试问题检查检索结果并调整切分方式。",
+            source_note="本人补充，待提供量化数据",
+            database_path=self.database_path,
+        )
+        self.assertEqual(updated["category"], "成果")
+        self.assertEqual(updated["title"], "问答检索效果改进")
+        self.assertTrue(delete_knowledge_item(created["id"], self.database_path))
+        self.assertEqual(get_knowledge_items(self.database_path), [])
+
+    def test_resume_versions_are_saved_with_source_item_ids(self) -> None:
+        item = create_knowledge_item(
+            category="技能",
+            title="Python",
+            content="使用 Python 编写过后端服务。",
+            database_path=self.database_path,
+        )
+
+        first = create_resume(
+            title="基础简历",
+            content="# 基础简历\n技能：Python",
+            source_item_ids=[item["id"]],
+            database_path=self.database_path,
+        )
+        second = create_resume(
+            title="基础简历（补充）",
+            content="# 基础简历\n技能：Python、SQLite",
+            source_item_ids=[item["id"], item["id"]],
+            database_path=self.database_path,
+        )
+
+        self.assertEqual(first["version"], 1)
+        self.assertEqual(second["version"], 2)
+        self.assertEqual(second["source_item_ids"], [item["id"]])
+        self.assertEqual([resume["version"] for resume in get_resumes(self.database_path)], [2, 1])
+
+    def test_resume_source_is_saved_and_can_be_deleted_without_deleting_versions(self) -> None:
+        source = create_resume_source(
+            filename="resume.txt",
+            content="# 我的原始简历\n项目经验：本地原型",
+            database_path=self.database_path,
+        )
+        saved_source = get_resume_sources(self.database_path)
+        self.assertEqual(saved_source[0]["id"], source["id"])
+        self.assertEqual(saved_source[0]["filename"], "resume.txt")
+        self.assertEqual(saved_source[0]["content"], "# 我的原始简历\n项目经验：本地原型")
+
+        resume = create_resume(
+            title="升级草稿",
+            content="# 升级草稿",
+            source_item_ids=[],
+            source_resume_id=source["id"],
+            database_path=self.database_path,
+        )
+        self.assertEqual(resume["source_resume_id"], source["id"])
+        self.assertTrue(delete_resume_source(source["id"], self.database_path))
+        self.assertEqual(get_resume_sources(self.database_path), [])
+        self.assertEqual(get_resumes(self.database_path)[0]["id"], resume["id"])
 
 
 if __name__ == "__main__":
