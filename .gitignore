@@ -1,8 +1,12 @@
 .venv/
 data/
+/tmp/
+/output/
 __pycache__/
 *.py[cod]
 .idea/
+frontend/node_modules/
+frontend/dist/
 .pytest_cache/
 tests/__pycache__/
 tests/tmp*/

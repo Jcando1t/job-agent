@@ -12,8 +12,9 @@ from app.database import (
     get_knowledge_items,
     get_resumes,
     get_resume_sources,
+    get_resume_image_sources,
+    get_resume_image_source,
     get_targets,
-    initialize_database,
     set_target_active,
     update_job,
     update_knowledge_item,
@@ -21,14 +22,17 @@ from app.database import (
     create_resume,
     create_resume_source,
     delete_resume_source,
+    create_resume_image_source,
+    delete_resume_image_source,
 )
+from tests.db_support import initialize_test_database
 
 
 class JobTargetDatabaseTests(unittest.TestCase):
     def setUp(self) -> None:
         self.database_path = Path(__file__).resolve().parent / "job_targets_test.db"
         self.database_path.unlink(missing_ok=True)
-        initialize_database(self.database_path)
+        initialize_test_database(self.database_path)
 
     def tearDown(self) -> None:
         self.database_path.unlink(missing_ok=True)
@@ -41,7 +45,7 @@ class JobTargetDatabaseTests(unittest.TestCase):
             database_path=self.database_path,
         )
 
-        initialize_database(self.database_path)
+        initialize_test_database(self.database_path)
         saved_targets = get_targets(self.database_path)
 
         self.assertEqual(len(saved_targets), 1)
@@ -88,6 +92,8 @@ class JobTargetDatabaseTests(unittest.TestCase):
             city="北京",
             source="手动录入",
             original_url="https://example.com/jobs/1",
+            notes="需要确认是否接受远程",
+            next_action="周五前准备定制简历",
             description="负责 Python 服务开发。",
             target_id=target["id"],
             database_path=self.database_path,
@@ -95,6 +101,36 @@ class JobTargetDatabaseTests(unittest.TestCase):
 
         self.assertEqual(len(get_jobs(self.database_path)), 1)
         self.assertEqual(created["target_title"], "Python 后端开发")
+        self.assertEqual(created["status"], "未处理")
+        self.assertEqual(created["notes"], "需要确认是否接受远程")
+        self.assertEqual(created["next_action"], "周五前准备定制简历")
+
+        duplicate = create_job(
+            title="后端工程师",
+            company="示例科技",
+            city="北京",
+            original_url="https://example.com/jobs/1",
+            database_path=self.database_path,
+        )
+        self.assertTrue(duplicate["duplicate"])
+
+        another = create_job(
+            title="算法工程师",
+            company="示例实验室",
+            city="北京",
+            original_url="https://example.com/jobs/3",
+            database_path=self.database_path,
+        )
+        collision = update_job(
+            job_id=another["id"],
+            title="后端工程师",
+            company="示例科技",
+            city="北京",
+            original_url="https://example.com/jobs/1",
+            database_path=self.database_path,
+        )
+        self.assertTrue(collision["duplicate"])
+        self.assertTrue(delete_job(another["id"], self.database_path))
 
         updated = update_job(
             job_id=created["id"],
@@ -104,6 +140,9 @@ class JobTargetDatabaseTests(unittest.TestCase):
             source="招聘网站",
             original_url="https://example.com/jobs/2",
             description="维护 Web API。",
+            status="已投递",
+            notes="已通过官网提交",
+            next_action="等待一周后跟进",
             target_id=None,
             database_path=self.database_path,
         )
@@ -111,6 +150,9 @@ class JobTargetDatabaseTests(unittest.TestCase):
         self.assertEqual(updated["title"], "高级后端工程师")
         self.assertEqual(updated["target_id"], None)
         self.assertEqual(updated["original_url"], "https://example.com/jobs/2")
+        self.assertEqual(updated["status"], "已投递")
+        self.assertEqual(updated["notes"], "已通过官网提交")
+        self.assertEqual(updated["next_action"], "等待一周后跟进")
         self.assertTrue(delete_job(created["id"], self.database_path))
         self.assertEqual(get_jobs(self.database_path), [])
         self.assertFalse(delete_job(created["id"], self.database_path))
@@ -146,7 +188,7 @@ class JobTargetDatabaseTests(unittest.TestCase):
             database_path=self.database_path,
         )
 
-        initialize_database(self.database_path)
+        initialize_test_database(self.database_path)
         saved_items = get_knowledge_items(self.database_path)
         self.assertEqual(len(saved_items), 1)
         self.assertEqual(saved_items[0]["id"], created["id"])
@@ -215,6 +257,37 @@ class JobTargetDatabaseTests(unittest.TestCase):
         self.assertTrue(delete_resume_source(source["id"], self.database_path))
         self.assertEqual(get_resume_sources(self.database_path), [])
         self.assertEqual(get_resumes(self.database_path)[0]["id"], resume["id"])
+
+    def test_resume_image_is_saved_locally_and_can_be_read_or_deleted(self) -> None:
+        image_bytes = b"\\x89PNG\\r\\n\\x1a\\nexample-image-data"
+        image = create_resume_image_source(
+            filename="resume-page.png",
+            content_type="image/png",
+            content=image_bytes,
+            database_path=self.database_path,
+        )
+
+        self.assertEqual(get_resume_image_sources(self.database_path)[0], image)
+        saved_image = get_resume_image_source(image["id"], self.database_path)
+        self.assertEqual(saved_image["content"], image_bytes)
+        self.assertTrue(delete_resume_image_source(image["id"], self.database_path))
+        self.assertIsNone(get_resume_image_source(image["id"], self.database_path))
+        self.assertEqual(get_resume_image_sources(self.database_path), [])
+
+    def test_resume_text_keeps_reference_to_confirmed_image_sources(self) -> None:
+        image = create_resume_image_source(
+            filename="resume-page.png",
+            content_type="image/png",
+            content=b"image",
+            database_path=self.database_path,
+        )
+        source = create_resume_source(
+            filename="resume-page.png（人工校对文字）",
+            content="已核对的简历文字",
+            source_image_ids=[image["id"], image["id"]],
+            database_path=self.database_path,
+        )
+        self.assertEqual(source["source_image_ids"], [image["id"]])
 
 
 if __name__ == "__main__":

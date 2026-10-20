@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 import main
 from app.services.resume_export import render_resume_docx
+from app.services.resume_export import render_resume_pdf
 
 
 class ResumeExportServiceTests(unittest.TestCase):
@@ -41,6 +42,14 @@ class ResumeExportServiceTests(unittest.TestCase):
 
         self.assertAlmostEqual(section.page_width, Mm(210), delta=1000)
         self.assertAlmostEqual(section.page_height, Mm(297), delta=1000)
+
+    def test_pdf_export_is_one_page_and_keeps_chinese_text(self) -> None:
+        from pypdf import PdfReader
+
+        output = render_resume_pdf("测试简历", "# 张三\n## 项目经历\n- 使用 Python 完成项目")
+        reader = PdfReader(BytesIO(output))
+        self.assertEqual(len(reader.pages), 1)
+        self.assertIn("张三", reader.pages[0].extract_text())
 
 
 class ResumeExportApiTests(unittest.TestCase):
@@ -79,7 +88,7 @@ class ResumeExportApiTests(unittest.TestCase):
 
         with patch("main.get_resume", return_value=self.resume):
             with self.assertRaises(HTTPException) as unsupported:
-                main.download_resume(5, "pdf")
+                main.download_resume(5, "txt")
         self.assertEqual(unsupported.exception.status_code, 422)
 
 

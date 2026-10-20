@@ -100,6 +100,12 @@
     .resume-mode { margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: #eef2ff; color: #2847b9; font-size: 13px; line-height: 1.5; }
     .resume-list { display: grid; gap: 12px; margin-top: 22px; }
     .resume-source-list { display: grid; gap: 12px; margin-top: 16px; }
+    .resume-image-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-top: 14px; }
+    .resume-image-card { min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcff; }
+    .resume-image-card img { display: block; width: 100%; height: 150px; object-fit: contain; background: white; border-radius: 7px; }
+    .resume-image-card p { overflow-wrap: anywhere; color: var(--muted); font-size: 12px; }
+    .resume-image-text { margin-top: 16px; }
+    .resume-image-text[hidden] { display: none; }
     .resume-source-card { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fbfcff; }
     .resume-card { padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: white; }
     .resume-preview { margin: 10px 0 0; max-height: 220px; overflow: auto; white-space: pre-wrap; color: #475467; font-size: 13px; line-height: 1.65; }
@@ -137,6 +143,27 @@
           <textarea id="resume-import-content" maxlength="30000" placeholder="也可以直接把已有简历粘贴到这里"></textarea>
           <button type="button" id="load-existing-resume">保存并载入原始简历</button>
         </div>
+        <div class="resume-option">
+          <h3>图片简历导入</h3>
+          <p>上传 PNG/JPG 图片原稿（单张不超过 10 MB）。系统会在本机自动识别图片文字；你校对确认后再保存为简历原文。</p>
+          <input id="resume-image-files" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" multiple>
+          <button type="button" id="save-resume-images">保存所选图片</button>
+          <p class="notice" id="resume-image-notice" role="status"></p>
+        </div>
+      </div>
+      <div class="list-heading">
+        <div>
+          <h2>已保存的简历图片</h2>
+          <span class="count" id="resume-image-count">正在读取…</span>
+        </div>
+      </div>
+      <div class="resume-image-list" id="resume-image-list" aria-live="polite"></div>
+      <div class="resume-image-text" id="resume-image-text-step" hidden>
+        <p class="resume-mode" id="resume-image-selection">请选择已保存的图片，然后自动识别文字。</p>
+        <button type="button" id="recognize-resume-images">识别所选图片文字</button>
+        <label for="resume-image-transcript">识别结果（请校对；也可以直接粘贴文字）</label>
+        <textarea id="resume-image-transcript" maxlength="30000" placeholder="识别结果会显示在这里。请重点检查姓名、日期、数字和技能名称；也可以直接粘贴简历文字。"></textarea>
+        <button type="button" id="confirm-image-transcript" class="primary">确认文字并保存为简历原文</button>
       </div>
       <div class="list-heading">
         <div>
@@ -248,6 +275,21 @@
         <label for="resume-title">升级版本名称</label>
         <input id="resume-title" type="text" maxlength="120" value="简历升级草稿">
         <p class="resume-source" id="resume-source">尚未载入简历原文。</p>
+        <div class="resume-option">
+          <h3>AI 帮你改进简历</h3>
+          <p>会把当前原始简历和已保存的个人资料发送到 .env 中配置的 DeepSeek 服务。请勿包含不愿发送给服务商的信息；未勾选时不会调用模型。</p>
+          <label class="city-choice"><input id="allow-model-transfer" type="checkbox"> 我确认将上述资料发送到 DeepSeek 生成改进草稿</label>
+          <label for="resume-ai-instruction">改进重点（可选）</label>
+          <input id="resume-ai-instruction" type="text" maxlength="500" placeholder="例如：突出 AI Agent 项目经验，控制在一页">
+          <button type="button" id="generate-resume-draft">生成 AI 改进草稿</button>
+          <p class="notice" id="resume-ai-notice" role="status"></p>
+          <div id="resume-ai-review" hidden>
+            <h3>依据与待确认信息</h3>
+            <ul id="resume-ai-evidence"></ul>
+            <ul id="resume-ai-missing"></ul>
+            <button type="button" class="primary" id="approve-ai-resume">审核通过并保存为新版本</button>
+          </div>
+        </div>
         <div class="actions">
           <button type="button" class="primary" id="save-resume">保存为新版本</button>
         </div>
@@ -371,16 +413,30 @@
     const resumeListElement = document.querySelector("#resume-list");
     const resumeSourceCountElement = document.querySelector("#resume-source-count");
     const resumeSourceListElement = document.querySelector("#resume-source-list");
+    const resumeImageFilesElement = document.querySelector("#resume-image-files");
+    const resumeImageNoticeElement = document.querySelector("#resume-image-notice");
+    const resumeImageCountElement = document.querySelector("#resume-image-count");
+    const resumeImageListElement = document.querySelector("#resume-image-list");
+    const resumeImageTextStepElement = document.querySelector("#resume-image-text-step");
+    const resumeImageSelectionElement = document.querySelector("#resume-image-selection");
+    const resumeImageTranscriptElement = document.querySelector("#resume-image-transcript");
     const resumeModeElement = document.querySelector("#resume-mode");
     const resumeUpgradeLockElement = document.querySelector("#resume-upgrade-lock");
     const resumeUpgradeEditorElement = document.querySelector("#resume-upgrade-editor");
     const resumeImportFileElement = document.querySelector("#resume-import-file");
     const resumeImportContentElement = document.querySelector("#resume-import-content");
+    const resumeAiNoticeElement = document.querySelector("#resume-ai-notice");
+    const resumeAiReviewElement = document.querySelector("#resume-ai-review");
+    const resumeAiEvidenceElement = document.querySelector("#resume-ai-evidence");
+    const resumeAiMissingElement = document.querySelector("#resume-ai-missing");
     let resumeSourceItemIds = [];
     let selectedResumeSourceId = null;
+    let currentAiRunId = null;
     let profileItemId = null;
     let knowledgeItemCount = 0;
     let hasExperienceKnowledge = false;
+    let selectedResumeImageIds = [];
+    let resumeImageSources = [];
 
     function updateResumeUpgradeGate() {
       const ready = Boolean(selectedResumeSourceId && hasExperienceKnowledge);
@@ -715,6 +771,9 @@
             <h3 class="target-title">${escapeHtml(filename)}</h3>
             <span class="chip">原始材料 #${source.id}</span>
           </div>
+        ${source.source_image_ids && source.source_image_ids.length
+          ? `<p class="job-meta">图片来源：${source.source_image_ids.map((id) => `#${id}`).join("、")}</p>`
+          : ""}
           <p class="job-meta">本地保存 · ${escapeHtml(source.created_at)}</p>
           <div class="actions">
             <button type="button" data-source-action="use">载入到升级草稿</button>
@@ -733,8 +792,42 @@
       updateResumeUpgradeGate();
     }
 
+    function renderResumeImage(image) {
+      const selected = selectedResumeImageIds.includes(image.id);
+      return `
+        <article class="resume-image-card" data-image-id="${image.id}">
+          <img src="/api/resume-images/${image.id}/content" alt="简历图片：${escapeHtml(image.filename)}" loading="lazy">
+          <p>${escapeHtml(image.filename)}</p>
+          <div class="actions">
+            <button type="button" data-image-action="select">${selected ? "已选作文字来源" : "选择并核对文字"}</button>
+            <button type="button" data-image-action="delete" class="danger">删除图片</button>
+          </div>
+        </article>
+      `;
+    }
+
+    async function refreshResumeImages() {
+      resumeImageSources = await request("/api/resume-images");
+      const existingIds = new Set(resumeImageSources.map((image) => image.id));
+      selectedResumeImageIds = selectedResumeImageIds.filter((id) => existingIds.has(id));
+      resumeImageCountElement.textContent = `${resumeImageSources.length} 张图片`;
+      resumeImageListElement.innerHTML = resumeImageSources.length
+        ? resumeImageSources.map(renderResumeImage).join("")
+        : '<div class="empty">还没有保存图片简历。</div>';
+      resumeImageTextStepElement.hidden = selectedResumeImageIds.length === 0;
+      const selectedNames = resumeImageSources
+        .filter((image) => selectedResumeImageIds.includes(image.id))
+        .map((image) => image.filename);
+      resumeImageSelectionElement.textContent = selectedNames.length
+        ? `已选择 ${selectedNames.length} 张图片：${selectedNames.join("、")}。点击“识别所选图片文字”，识别后请校对。`
+        : "请选择已保存的图片，然后自动识别文字；也可以在下方直接粘贴。";
+    }
+
     function loadResumeSource(source) {
       selectedResumeSourceId = source.id;
+      currentAiRunId = null;
+      resumeAiReviewElement.hidden = true;
+      resumeAiNoticeElement.textContent = "";
       resumeTitleElement.value = "简历升级草稿";
       resumeOriginalElement.value = source.content;
       resumeContentElement.value = source.content;
@@ -743,6 +836,75 @@
       updateResumeUpgradeGate();
       if (hasExperienceKnowledge) resumeContentElement.focus();
     }
+
+    document.querySelector("#generate-resume-draft").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      resumeAiNoticeElement.textContent = "";
+      if (!selectedResumeSourceId) {
+        resumeAiNoticeElement.textContent = "请先载入一份原始简历。";
+        return;
+      }
+      if (!document.querySelector("#allow-model-transfer").checked) {
+        resumeAiNoticeElement.textContent = "请先确认简历和个人资料可以发送给 DeepSeek。";
+        return;
+      }
+      button.disabled = true;
+      button.textContent = "正在生成，请稍候…";
+      try {
+        const run = await request("/api/resume-runs", {
+          method: "POST",
+          body: JSON.stringify({
+            source_resume_id: selectedResumeSourceId,
+            instruction: document.querySelector("#resume-ai-instruction").value,
+            allow_external_model: true
+          })
+        });
+        currentAiRunId = run.id;
+        resumeContentElement.value = run.result_content;
+        resumeAiEvidenceElement.innerHTML = run.evidence.length
+          ? run.evidence.map((item) => `<li>资料 #${item.knowledge_item_id}：${escapeHtml(item.used_for)}</li>`).join("")
+          : "<li>模型没有返回可核验的个人资料依据，请逐项核对。</li>";
+        resumeAiMissingElement.innerHTML = run.missing_info.length
+          ? run.missing_info.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+          : "<li>模型未标记额外信息缺口；仍请人工检查事实。</li>";
+        resumeAiReviewElement.hidden = false;
+        resumeAiNoticeElement.style.color = "var(--green)";
+        resumeAiNoticeElement.textContent = "改进草稿已生成，尚未保存。请检查内容、依据和信息缺口；可在右侧编辑后确认。";
+      } catch (error) {
+        resumeAiNoticeElement.style.color = "#b42318";
+        resumeAiNoticeElement.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = "生成 AI 改进草稿";
+      }
+    });
+
+    document.querySelector("#approve-ai-resume").addEventListener("click", async () => {
+      if (!currentAiRunId) return;
+      const content = resumeContentElement.value.trim();
+      if (!content) {
+        resumeAiNoticeElement.textContent = "简历正文不能为空。";
+        return;
+      }
+      try {
+        await request(`/api/resume-runs/${currentAiRunId}/draft`, {
+          method: "PUT",
+          body: JSON.stringify({ result_content: content })
+        });
+        const resume = await request(`/api/resume-runs/${currentAiRunId}/approve`, {
+          method: "POST",
+          body: JSON.stringify({ title: resumeTitleElement.value.trim() || "AI 改进简历" })
+        });
+        currentAiRunId = null;
+        resumeAiReviewElement.hidden = true;
+        resumeAiNoticeElement.style.color = "var(--green)";
+        resumeAiNoticeElement.textContent = `已审核并保存为第 ${resume.version} 版简历。`;
+        await refreshResumes();
+      } catch (error) {
+        resumeAiNoticeElement.style.color = "#b42318";
+        resumeAiNoticeElement.textContent = error.message;
+      }
+    });
 
     document.querySelector("#add-form").addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -976,6 +1138,131 @@
       }
     });
 
+    document.querySelector("#save-resume-images").addEventListener("click", async () => {
+      const files = Array.from(resumeImageFilesElement.files || []);
+      resumeImageNoticeElement.textContent = "";
+      if (!files.length) {
+        resumeImageNoticeElement.textContent = "请先选择 PNG 或 JPG 图片。";
+        return;
+      }
+      try {
+        for (const file of files) {
+          if (!(["image/png", "image/jpeg"].includes(file.type))) {
+            throw new Error(`${file.name} 不是 PNG/JPG 图片。`);
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            throw new Error(`${file.name} 超过 10 MB，请压缩后再上传。`);
+          }
+          const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.addEventListener("load", () => resolve(String(reader.result || "")));
+            reader.addEventListener("error", () => reject(new Error(`读取 ${file.name} 失败。`)));
+            reader.readAsDataURL(file);
+          });
+          await request("/api/resume-images", {
+            method: "POST",
+            body: JSON.stringify({
+              filename: file.name,
+              content_type: file.type,
+              content_base64: dataUrl.split(",", 2)[1]
+            })
+          });
+        }
+        resumeImageFilesElement.value = "";
+        await refreshResumeImages();
+        resumeImageNoticeElement.style.color = "var(--green)";
+        resumeImageNoticeElement.textContent = "图片已保存在本地。请选择图片并确认对应文字后，才会作为简历原文使用。";
+      } catch (error) {
+        resumeImageNoticeElement.style.color = "#b42318";
+        resumeImageNoticeElement.textContent = error.message;
+      }
+    });
+
+    resumeImageListElement.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-image-action]");
+      if (!button) return;
+      const card = button.closest("[data-image-id]");
+      const imageId = Number(card.dataset.imageId);
+      if (button.dataset.imageAction === "select") {
+        selectedResumeImageIds = selectedResumeImageIds.includes(imageId)
+          ? selectedResumeImageIds.filter((id) => id !== imageId)
+          : [...selectedResumeImageIds, imageId];
+        await refreshResumeImages();
+        return;
+      }
+      if (!window.confirm("确定删除这张简历图片吗？已保存的文字原文不会删除。")) return;
+      try {
+        await request(`/api/resume-images/${imageId}`, { method: "DELETE" });
+        await refreshResumeImages();
+      } catch (error) {
+        resumeImageNoticeElement.textContent = error.message;
+      }
+    });
+
+    document.querySelector("#recognize-resume-images").addEventListener("click", async (event) => {
+      const button = event.currentTarget;
+      resumeImageNoticeElement.textContent = "";
+      if (!selectedResumeImageIds.length) {
+        resumeImageNoticeElement.textContent = "请先选择至少一张图片。";
+        return;
+      }
+      if (resumeImageTranscriptElement.value.trim() && !window.confirm("识别结果会替换当前文字，是否继续？")) return;
+      button.disabled = true;
+      button.textContent = "正在本机识别…";
+      try {
+        const result = await request("/api/resume-images/recognize", {
+          method: "POST",
+          body: JSON.stringify({ image_ids: selectedResumeImageIds })
+        });
+        const recognized = result.results
+          .filter((image) => image.text.trim())
+          .map((image) => `【${image.filename}】\n${image.text.trim()}`);
+        resumeImageTranscriptElement.value = recognized.join("\n\n");
+        resumeImageTranscriptElement.focus();
+        resumeImageNoticeElement.style.color = recognized.length ? "var(--green)" : "#b42318";
+        resumeImageNoticeElement.textContent = recognized.length
+          ? `已识别 ${recognized.length} 张图片。请校对识别结果，尤其检查姓名、日期、数字和技术名称；确认前不会保存为简历原文。`
+          : "图片中没有识别到文字。你可以换清晰图片重试，或直接粘贴简历文字。";
+      } catch (error) {
+        resumeImageNoticeElement.style.color = "#b42318";
+        resumeImageNoticeElement.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = "识别所选图片文字";
+      }
+    });
+
+    document.querySelector("#confirm-image-transcript").addEventListener("click", async () => {
+      const content = resumeImageTranscriptElement.value.trim();
+      if (!content) {
+        resumeImageNoticeElement.style.color = "#b42318";
+        resumeImageNoticeElement.textContent = "请先校对识别结果或直接粘贴简历文字，并检查姓名、日期、数字和技能名称。";
+        return;
+      }
+      const sources = resumeImageSources.filter((image) => selectedResumeImageIds.includes(image.id));
+      const filename = `${sources.map((image) => image.filename).join("、")}（已校对文字）`;
+      try {
+        const source = await request("/api/resume-sources", {
+          method: "POST",
+          body: JSON.stringify({
+            filename,
+            content,
+            source_image_ids: selectedResumeImageIds
+          })
+        });
+        resumeImageTranscriptElement.value = "";
+        selectedResumeImageIds = [];
+        await refreshResumeSources();
+        await refreshResumeImages();
+        loadResumeSource(source);
+        resumeImageNoticeElement.style.color = "var(--green)";
+        resumeImageNoticeElement.textContent = "已保存为简历原文，并记录对应图片来源。";
+      } catch (error) {
+        resumeImageNoticeElement.style.color = "#b42318";
+        resumeImageNoticeElement.textContent = error.message;
+      }
+    });
+
     resumeSourceListElement.addEventListener("click", async (event) => {
       const button = event.target.closest("button[data-source-action]");
       if (!button) return;
@@ -1064,6 +1351,10 @@
     refreshResumeSources().catch((error) => {
       resumeSourceCountElement.textContent = "读取失败";
       resumeSourceListElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+    });
+    refreshResumeImages().catch((error) => {
+      resumeImageCountElement.textContent = "读取失败";
+      resumeImageListElement.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
     });
   </script>
 </body>

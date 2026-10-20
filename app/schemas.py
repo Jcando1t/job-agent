@@ -41,9 +41,12 @@ class JobInput(BaseModel):
     source: str = Field(default="手动录入", max_length=80)
     original_url: str = Field(default="", max_length=1000)
     description: str = Field(default="", max_length=10000)
+    status: Literal["未处理", "收藏", "不合适", "已投递", "面试中", "已结束"] = "未处理"
+    notes: str = Field(default="", max_length=5000)
+    next_action: str = Field(default="", max_length=500)
     target_id: int | None = Field(default=None, gt=0)
 
-    @field_validator("title", "company", "city", "source", "original_url", "description")
+    @field_validator("title", "company", "city", "source", "original_url", "description", "status", "notes", "next_action")
     @classmethod
     def trim_job_text(cls, value: str) -> str:
         return value.strip()
@@ -68,6 +71,62 @@ class JobInput(BaseModel):
             if parts.scheme not in {"http", "https"} or not parts.netloc:
                 raise ValueError("原始链接需要以 http:// 或 https:// 开头")
         return value
+
+
+class BossJobTextInput(BaseModel):
+    text: str = Field(min_length=1, max_length=20000)
+
+    @field_validator("text")
+    @classmethod
+    def pasted_text_must_not_be_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("请粘贴 BOSS 岗位文字")
+        return value
+
+
+class BossJobUrlInput(BaseModel):
+    url: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("url")
+    @classmethod
+    def trim_url(cls, value: str) -> str:
+        return value.strip()
+
+
+class BossGreetingSendInput(BaseModel):
+    job_id: int = Field(gt=0)
+    resume_id: int = Field(gt=0)
+    greeting: str = Field(min_length=1, max_length=5000)
+    confirmed: bool = False
+
+    @field_validator("greeting")
+    @classmethod
+    def trim_greeting(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("打招呼语不能为空")
+        return value
+
+
+class BossGreetingPrepareInput(BaseModel):
+    job_id: int = Field(gt=0)
+    resume_id: int = Field(gt=0)
+    greeting: str = Field(min_length=1, max_length=5000)
+
+    @field_validator("greeting")
+    @classmethod
+    def trim_greeting(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("打招呼语不能为空")
+        return value
+
+
+class BossResumeSendInput(BaseModel):
+    job_id: int = Field(gt=0)
+    resume_id: int = Field(gt=0)
+    confirmed: bool = False
 
 
 class KnowledgeInput(BaseModel):
@@ -103,6 +162,7 @@ class ResumeInput(BaseModel):
     content: str = Field(min_length=1, max_length=30000)
     source_item_ids: list[int] = Field(default_factory=list, max_length=200)
     source_resume_id: int | None = Field(default=None, gt=0)
+    target_id: int | None = Field(default=None, gt=0)
 
     @field_validator("title", "content")
     @classmethod
@@ -132,6 +192,7 @@ class ResumeInput(BaseModel):
 class ResumeSourceInput(BaseModel):
     filename: str = Field(default="手动粘贴", max_length=255)
     content: str = Field(min_length=1, max_length=30000)
+    source_image_ids: list[int] = Field(default_factory=list, max_length=10)
 
     @field_validator("filename", "content")
     @classmethod
@@ -148,4 +209,110 @@ class ResumeSourceInput(BaseModel):
     def source_content_must_not_be_blank(cls, value: str) -> str:
         if not value:
             raise ValueError("简历原文不能为空")
+        return value
+
+    @field_validator("source_image_ids")
+    @classmethod
+    def unique_source_image_ids(cls, value: list[int]) -> list[int]:
+        return list(dict.fromkeys(image_id for image_id in value if image_id > 0))
+
+
+class ResumeFileInput(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    content_base64: str = Field(min_length=1, max_length=14_000_000)
+
+    @field_validator("filename", "content_base64")
+    @classmethod
+    def trim_file_text(cls, value: str) -> str:
+        return value.strip()
+
+
+class ResumeImageInput(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    content_type: Literal["image/png", "image/jpeg", "image/webp", "image/gif"]
+    content_base64: str = Field(min_length=1, max_length=14_000_000)
+
+    @field_validator("filename", "content_base64")
+    @classmethod
+    def trim_image_text(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("filename")
+    @classmethod
+    def image_filename_must_not_be_blank(cls, value: str) -> str:
+        if not value:
+            raise ValueError("图片文件名不能为空")
+        return value
+
+    @field_validator("content_base64")
+    @classmethod
+    def image_data_must_not_be_blank(cls, value: str) -> str:
+        if not value:
+            raise ValueError("图片内容不能为空")
+        return value
+
+
+class ResumeImageOcrInput(BaseModel):
+    image_ids: list[int] = Field(min_length=1, max_length=10)
+
+    @field_validator("image_ids")
+    @classmethod
+    def unique_positive_image_ids(cls, value: list[int]) -> list[int]:
+        if any(image_id <= 0 for image_id in value):
+            raise ValueError("图片编号无效")
+        return list(dict.fromkeys(value))
+
+
+class ResumeRunInput(BaseModel):
+    source_resume_id: int = Field(gt=0)
+    job_id: int | None = Field(default=None, gt=0)
+    target_id: int | None = Field(default=None, gt=0)
+    instruction: str = Field(default="", max_length=2000)
+    job_title: str = Field(default="", max_length=200)
+    company: str = Field(default="", max_length=200)
+    jd_text: str = Field(default="", max_length=30000)
+    allow_external_model: bool = False
+
+    @field_validator("instruction")
+    @classmethod
+    def trim_instruction(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("job_title", "company", "jd_text")
+    @classmethod
+    def trim_job_fields(cls, value: str) -> str:
+        return value.strip()
+
+
+class ResumeRunUpdate(BaseModel):
+    result_content: str = Field(min_length=1, max_length=30000)
+    greeting: str = Field(default="", max_length=5000)
+
+    @field_validator("result_content")
+    @classmethod
+    def trim_result_content(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("result_content")
+    @classmethod
+    def content_must_not_be_blank(cls, value: str) -> str:
+        if not value:
+            raise ValueError("修改后的简历内容不能为空")
+        return value
+
+    @field_validator("greeting")
+    @classmethod
+    def trim_greeting(cls, value: str) -> str:
+        return value.strip()
+
+
+class ResumeRunApproval(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+
+    @field_validator("title")
+    @classmethod
+    def trim_title(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("请填写简历版本名称")
         return value

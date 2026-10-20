@@ -1,0 +1,51 @@
+:root { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #172033; background: #f4f7fb; }
+* { box-sizing: border-box; } body { margin: 0; } button, input, textarea, select { font: inherit; } button { cursor: pointer; }
+.shell { width: min(1100px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 70px; } header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; } h1 { margin: 5px 0 8px; font-size: 32px; } h2 { margin-top: 0; } h3 { margin-top: 28px; } .eyebrow { margin: 0; color: #5e6fd4; letter-spacing: .15em; font-size: 12px; font-weight: 700; } .subtitle, .hint, .muted, .card span { color: #687386; line-height: 1.6; } .badge { padding: 7px 11px; background: #e8edff; color: #4156c4; border-radius: 999px; font-size: 12px; }
+.module-index { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; overflow-x: auto; padding: 14px 0; background: #f4f7fb; } .module-index a { white-space: nowrap; padding: 9px 13px; border-radius: 9px; color: #536174; text-decoration: none; } .module-index a.active, .module-index a:hover { background: #283da8; color: white; }
+.panel { background: white; border: 1px solid #e1e6ef; border-radius: 16px; padding: 25px; box-shadow: 0 8px 24px #1c2d5510; } .grid { display: grid; gap: 20px; } .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } label { display: block; margin: 14px 0 6px; font-weight: 600; font-size: 14px; } input, textarea, select { width: 100%; border: 1px solid #cfd6e2; border-radius: 8px; padding: 10px 11px; color: #172033; background: white; } textarea { min-height: 150px; resize: vertical; } button { border: 1px solid #cbd4e1; border-radius: 8px; background: white; padding: 9px 13px; color: #26344b; } button.primary { background: #3e55c7; border-color: #3e55c7; color: white; margin-top: 14px; } button:disabled { cursor: not-allowed; opacity: .55; } .notice { color: #3e55c7; min-height: 22px; white-space: pre-wrap; } .check { display: flex; gap: 8px; align-items: center; } .check input { width: auto; }
+.card-list { display: grid; gap: 10px; } .card { display: block; text-align: left; width: 100%; padding: 14px; border: 1px solid #e1e6ef; border-radius: 10px; background: #fbfcff; } .card strong, .card span { display: block; } .card p { white-space: pre-wrap; line-height: 1.6; } .upgrade { margin-top: 20px; border-top: 1px solid #e8ebf2; padding-top: 15px; } .review { margin-top: 20px; padding: 16px; border-radius: 10px; background: #f6f8ff; } .review textarea { min-height: 380px; } .review li { margin: 7px 0; line-height: 1.5; } .image-list { display: grid; gap: 10px; margin: 12px 0; } .image-item { display: grid; grid-template-columns: auto 1fr 80px; gap: 8px; align-items: center; margin: 0; font-weight: 400; } .image-item img { width: 80px; height: 60px; object-fit: contain; border: 1px solid #e1e6ef; }
+.job-filters { padding: 12px; margin-bottom: 12px; border: 1px solid #e1e6ef; border-radius: 10px; background: #f6f8ff; }
+.import-card { margin: 18px 0 24px; padding: 18px; border: 1px solid #d8e0f4; border-radius: 12px; background: #f7f9ff; }
+.import-card h3 { margin-top: 0; }
+@media (max-width: 720px) { .shell { width: min(100% - 20px, 620px); padding-top: 22px; } header { display: block; } .badge { display: inline-block; margin-top: 12px; } .module-index { flex-wrap: wrap; overflow-x: visible; } .grid.two { grid-template-columns: 1fr; } .panel { padding: 18px; } }
+.compare-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; } .compare-grid h4 { margin: 8px 0; } .resume-preview { min-height: 380px; max-height: 680px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; border: 1px solid #e1e6ef; border-radius: 8px; background: white; font: inherit; line-height: 1.6; } .short-text { min-height: 90px; } .link-button { border: 0; background: transparent; color: #344bbb; padding: 0; font-weight: 600; } .image-item button { padding: 6px 8px; } @media (max-width: 720px) { .compare-grid { grid-template-columns: 1fr; } }
+.quality-check { margin: 20px 0; padding: 14px 16px; border: 1px solid #dbe2f4; border-radius: 10px; background: #fff; } .quality-check li { margin: 8px 0; line-height: 1.5; } .quality-check li span { display: block; } .quality-check details { margin: 8px 0; } .quality-check summary { cursor: pointer; color: #344bbb; } .fact-check { margin: 16px 0; padding: 12px 14px; border: 1px solid #f2d6a2; border-radius: 10px; background: #fffaf0; } .fact-check li { margin: 8px 0; line-height: 1.5; }
+.agent-graph-status { margin: 0 0 18px; padding: 12px 14px; border: 1px solid #cbd8ff; border-radius: 10px; background: #f3f6ff; } .agent-graph-status h3 { margin: 0 0 6px; } .agent-graph-status p { margin: 0 0 4px; }
+
+.layout-check { padding: 10px 12px; border-radius: 8px; background: #eef8f1; color: #21633a; } .layout-check.over { background: #fff1f0; color: #b42318; }
+
+.chrome-card { border-color: #cdd8ff; background: #f8f9ff; } .chrome-status { padding: 10px 12px; border-radius: 8px; background: #eef2ff; color: #3549a4; overflow-wrap: anywhere; } .sync-preview { margin-top: 14px; }
+.delivery-prep { border-color: #a7b8ff; background: #f8f9ff; } .delivery-jd { min-height: 120px; max-height: 260px; }
+.workflow-overview { margin: 18px 0; padding: 16px; border: 1px solid #d8e0f4; border-radius: 14px; background: #fff; box-shadow: 0 6px 18px #1c2d5508; }
+.workflow-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.workflow-heading strong, .workflow-heading span { display: block; }
+.workflow-heading span { margin-top: 3px; color: #687386; font-size: 13px; }
+.workflow-next { border-color: #c8d2ff; background: #eef2ff; color: #344bbb; font-weight: 600; }
+.workflow-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.workflow-step { display: flex; align-items: center; gap: 9px; min-height: 62px; padding: 10px; border: 1px solid #e1e6ef; border-radius: 10px; background: #fbfcff; text-align: left; }
+.workflow-step:hover, .workflow-step.active { border-color: #8e9ff0; background: #f4f6ff; }
+.workflow-step.done { border-color: #b8dfc4; background: #f3fbf5; }
+.workflow-number { display: grid; place-items: center; flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; background: #e5e9f6; color: #52617a; font-weight: 700; font-size: 13px; }
+.workflow-step.done .workflow-number { background: #2f9e57; color: #fff; }
+.workflow-step b, .workflow-step small { display: block; }
+.workflow-step small { margin-top: 3px; color: #687386; line-height: 1.35; }
+.optional-label { color: #687386; font-size: 13px; font-weight: 400; }
+.jobs-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.jobs-heading h2 { margin-bottom: 4px; }
+.jobs-heading button { white-space: nowrap; }
+.secondary-tools { margin-top: 20px; }
+.secondary-tools > summary { cursor: pointer; color: #344bbb; font-weight: 600; }
+.secondary-tools[open] > summary { margin-bottom: 12px; }
+.manual-entry { margin-bottom: 12px; }
+.manual-entry > summary { cursor: pointer; color: #344bbb; font-weight: 600; }
+.manual-entry[open] > summary { margin-bottom: 8px; }
+.job-summary { display: flex; justify-content: space-between; align-items: center; gap: 14px; cursor: pointer; list-style-position: inside; }
+.job-summary > span:first-of-type { min-width: 0; }
+.job-summary strong, .job-summary small { display: block; }
+.job-summary small { margin-top: 4px; color: #687386; }
+.job-status { flex: 0 0 auto; padding: 4px 9px; border-radius: 999px; background: #e8edff; color: #4156c4; font-size: 12px; }
+.job-card-body { padding-top: 12px; }
+.job-description { margin: 12px 0; border-top: 1px solid #e1e6ef; padding-top: 10px; }
+.job-description > summary { cursor: pointer; color: #344bbb; font-weight: 600; }
+.job-description p { white-space: pre-wrap; line-height: 1.6; }
+@media (max-width: 720px) { .workflow-heading, .jobs-heading { display: block; } .workflow-next, .jobs-heading button { margin-top: 10px; } .workflow-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
