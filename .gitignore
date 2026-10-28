@@ -13,3 +13,18 @@ tests/tmp*/
 .env
 .env.*
 !.env.example
+
+# Local personal files and one-off photo editing artifacts
+.workbuddy/
+resume_photo_enhanced.jpg
+README_PHOTO_EDIT.md
+edit_photo.py
+process_photo_local.py
+process_resume_photo.py
+运行照片编辑.bat
+*.log
+pytest-cache-files-*/
+
+# Unused local experiments (not part of the current application)
+app/services/photo_editor.py
+app/services/local_photo_editor.py

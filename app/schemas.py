@@ -163,6 +163,7 @@ class ResumeInput(BaseModel):
     source_item_ids: list[int] = Field(default_factory=list, max_length=200)
     source_resume_id: int | None = Field(default=None, gt=0)
     target_id: int | None = Field(default=None, gt=0)
+    photo_image_id: int | None = Field(default=None, gt=0)
 
     @field_validator("title", "content")
     @classmethod
@@ -272,6 +273,7 @@ class ResumeRunInput(BaseModel):
     company: str = Field(default="", max_length=200)
     jd_text: str = Field(default="", max_length=30000)
     allow_external_model: bool = False
+    photo_image_id: int | None = Field(default=None, gt=0)
 
     @field_validator("instruction")
     @classmethod

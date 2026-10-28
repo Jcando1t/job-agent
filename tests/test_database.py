@@ -11,6 +11,7 @@ from app.database import (
     get_jobs,
     get_knowledge_items,
     get_resumes,
+    get_resume,
     get_resume_sources,
     get_resume_image_sources,
     get_resume_image_source,
@@ -273,6 +274,25 @@ class JobTargetDatabaseTests(unittest.TestCase):
         self.assertTrue(delete_resume_image_source(image["id"], self.database_path))
         self.assertIsNone(get_resume_image_source(image["id"], self.database_path))
         self.assertEqual(get_resume_image_sources(self.database_path), [])
+
+    def test_deleting_profile_photo_detaches_it_from_saved_resumes(self) -> None:
+        image = create_resume_image_source(
+            filename="profile.png",
+            content_type="image/png",
+            content=b"profile-photo",
+            database_path=self.database_path,
+        )
+        resume = create_resume(
+            title="带照片简历",
+            content="# 张三",
+            source_item_ids=[],
+            photo_image_id=image["id"],
+            database_path=self.database_path,
+        )
+
+        self.assertEqual(get_resume(resume["id"], self.database_path)["photo_image_id"], image["id"])
+        self.assertTrue(delete_resume_image_source(image["id"], self.database_path))
+        self.assertIsNone(get_resume(resume["id"], self.database_path)["photo_image_id"])
 
     def test_resume_text_keeps_reference_to_confirmed_image_sources(self) -> None:
         image = create_resume_image_source(

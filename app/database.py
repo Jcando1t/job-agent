@@ -491,6 +491,7 @@ def _resume_model_to_dict(resume: Resume) -> dict:
         "content": resume.content,
         "source_item_ids": json.loads(resume.source_item_ids),
         "source_resume_id": resume.source_resume_id,
+        "photo_image_id": resume.photo_image_id,
         "greeting": resume.greeting,
         "job_snapshot": json.loads(resume.job_snapshot),
         "created_at": resume.created_at,
@@ -641,6 +642,11 @@ def delete_resume_image_source(
             if image is None:
                 return False
             storage_path = image.storage_path
+            session.execute(
+                sqlalchemy_update(Resume)
+                .where(Resume.photo_image_id == image_id, Resume.owner_id == "local")
+                .values(photo_image_id=None)
+            )
             session.delete(image)
             session.commit()
             delete_private_file(storage_path)
@@ -678,6 +684,7 @@ def create_resume(
     greeting: str = "",
     job_snapshot: dict | None = None,
     target_id: int | None = None,
+    photo_image_id: int | None = None,
     database_path: Path = DATABASE_PATH,
 ) -> dict:
     source_item_ids = list(dict.fromkeys(item_id for item_id in source_item_ids if item_id > 0))
@@ -699,6 +706,7 @@ def create_resume(
                 content=content,
                 source_item_ids=json.dumps(source_item_ids),
                 source_resume_id=source_resume_id,
+                photo_image_id=photo_image_id,
                 greeting=greeting,
                 job_snapshot=json.dumps(job_snapshot or {}, ensure_ascii=False),
             )
@@ -894,6 +902,7 @@ def save_approved_agent_run(
                 ),
                 source_item_ids=json.dumps(snapshot.get("knowledge_item_ids", [])),
                 source_resume_id=run.source_resume_id,
+                photo_image_id=snapshot.get("photo_image_id"),
             )
             run.status = "approved"
             session.add(resume)
@@ -908,6 +917,7 @@ def save_approved_agent_run(
                 "content": resume.content,
                 "source_item_ids": json.loads(resume.source_item_ids),
                 "source_resume_id": resume.source_resume_id,
+                "photo_image_id": resume.photo_image_id,
                 "greeting": resume.greeting,
                 "job_snapshot": json.loads(resume.job_snapshot),
                 "created_at": resume.created_at,

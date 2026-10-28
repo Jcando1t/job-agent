@@ -384,12 +384,14 @@ def list_resumes():
 
 
 @app.get("/api/resumes/{resume_id}/download")
-def download_resume(resume_id: int, format: str = "docx"):
+def download_resume(resume_id: int, format: str = "docx", photo_id: int | None = None):
     resume = get_resume(resume_id)
     if resume is None:
         raise HTTPException(status_code=404, detail="简历版本不存在")
     if format not in {"docx", "pdf", "md"}:
         raise HTTPException(status_code=422, detail="仅支持 DOCX、PDF 或 Markdown 导出")
+    if photo_id is not None and photo_id <= 0:
+        raise HTTPException(status_code=422, detail="简历照片编号无效")
     title = _safe_download_stem(resume["title"], resume_id)
     extension = format
     headers = {
@@ -405,9 +407,13 @@ def download_resume(resume_id: int, format: str = "docx"):
             media_type="text/markdown; charset=utf-8",
             headers=headers,
         )
+    selected_photo_id = resume.get("photo_image_id") or photo_id
+    photo = get_resume_image_source(selected_photo_id) if selected_photo_id else None
+    if selected_photo_id and photo is None:
+        raise HTTPException(status_code=404, detail="简历照片不存在，请重新上传")
     if format == "pdf":
         try:
-            content = render_resume_pdf(title, resume["content"])
+            content = render_resume_pdf(title, resume["content"], photo["content"] if photo else None)
         except ResumePdfExportError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         return Response(
@@ -416,7 +422,7 @@ def download_resume(resume_id: int, format: str = "docx"):
             headers=headers,
         )
     return Response(
-        content=render_resume_docx(title, resume["content"]),
+        content=render_resume_docx(title, resume["content"], photo["content"] if photo else None),
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers=headers,
     )
@@ -554,6 +560,8 @@ def remove_resume_source(source_id: int):
 
 @app.post("/api/resumes", status_code=status.HTTP_201_CREATED)
 def save_resume(resume: ResumeInput):
+    if resume.photo_image_id and get_resume_image_source(resume.photo_image_id) is None:
+        raise HTTPException(status_code=404, detail="简历照片不存在，请重新上传")
     return create_resume(**resume.model_dump())
 
 
@@ -580,6 +588,8 @@ def read_resume_run(run_id: int):
 
 @app.post("/api/resume-runs", status_code=status.HTTP_201_CREATED)
 def create_resume_run(payload: ResumeRunInput):
+    if payload.photo_image_id and get_resume_image_source(payload.photo_image_id) is None:
+        raise HTTPException(status_code=404, detail="简历照片不存在，请重新上传")
     if not payload.allow_external_model:
         raise HTTPException(
             status_code=400,
@@ -621,6 +631,7 @@ def create_resume_run(payload: ResumeRunInput):
         "job_title": job_title,
         "company": company,
         "jd_text": jd_text,
+        "photo_image_id": payload.photo_image_id,
         "jd_analysis": jd_analysis,
         "requirement_matches": requirement_matches,
         "knowledge_item_ids": [item["id"] for item in knowledge_items],

@@ -92,6 +92,7 @@ class Resume(Base):
         String, nullable=False, server_default=text("CURRENT_TIMESTAMP"), onupdate=func.current_timestamp()
     )
     source_resume_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    photo_image_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     greeting: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     job_snapshot: Mapped[str] = mapped_column(Text, nullable=False, server_default="{}")
 
